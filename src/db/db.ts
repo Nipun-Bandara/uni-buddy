@@ -1,8 +1,9 @@
 import Dexie, { type EntityTable } from 'dexie'
-import { schemaV1 } from '@/db/schema'
-import type { ClassOccurrence, Module, ScheduleRule, Semester, Setting, WorkSession } from '@/db/types'
+import { schemaV1, schemaV2 } from '@/db/schema'
+import type { AcademicDate, ClassOccurrence, Module, ScheduleRule, Semester, Setting, WorkSession } from '@/db/types'
 
 class StudentProductivityDatabase extends Dexie {
+  academicDates!: EntityTable<AcademicDate, 'id'>
   semesters!: EntityTable<Semester, 'id'>
   modules!: EntityTable<Module, 'id'>
   scheduleRules!: EntityTable<ScheduleRule, 'id'>
@@ -13,6 +14,7 @@ class StudentProductivityDatabase extends Dexie {
   constructor() {
     super('StudentProductivityDB')
     this.version(1).stores(schemaV1)
+    this.version(2).stores(schemaV2)
   }
 }
 

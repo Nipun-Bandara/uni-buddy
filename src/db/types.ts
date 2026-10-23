@@ -51,3 +51,14 @@ export interface Setting {
   key: string
   value: SettingValue
 }
+
+export type AcademicDateType = 'break' | 'holiday' | 'exam-week' | 'exam' | 'assignment'
+/** Inclusive date-only range. Exams and assignments have matching start/end dates. */
+export interface AcademicDate {
+  id: string
+  semesterId: string
+  type: AcademicDateType
+  title: string
+  startDate: string
+  endDate: string
+}

@@ -7,3 +7,9 @@ export const schemaV1 = {
   workSessions: 'id, moduleId, startedAt',
   settings: 'key',
 }
+
+/** Additive migration: preserve all existing version 1 records. */
+export const schemaV2 = {
+  ...schemaV1,
+  academicDates: 'id, semesterId',
+}
