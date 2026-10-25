@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { db } from '@/db/db'
 import type { AttendanceStatus, ClassOccurrence, ScheduleRule } from '@/db/types'
-import { calendarDateSchema, localTimeSchema, parseCalendarDate, toCalendarDate, toLocalTime } from '@/lib/dates'
+import { calendarDateSchema, localDateTimeToIso } from '@/lib/dates'
 import { createId } from '@/lib/ids'
 import { occursOnDate } from '@/lib/recurrence'
 
@@ -10,19 +10,8 @@ const attendanceStatusSchema = z.enum(['pending', 'attended', 'missed', 'cancell
 /** Combine local date/time components, then serialize the resulting instant to ISO. */
 export function occurrenceTimestamps(rule: ScheduleRule, date: string) {
   calendarDateSchema.parse(date)
-  function timestamp(time: string) {
-    localTimeSchema.parse(time)
-    const instant = parseCalendarDate(date)
-    const [hours, minutes] = time.split(':').map(Number)
-    instant.setHours(hours, minutes, 0, 0)
-    // Reject nonexistent wall-clock times instead of silently shifting them across a DST gap.
-    if (toCalendarDate(instant) !== date || toLocalTime(instant) !== time) {
-      throw new RangeError('This local date/time does not exist in the device timezone.')
-    }
-    return instant.toISOString()
-  }
-  const startAt = timestamp(rule.startTime)
-  const endAt = timestamp(rule.endTime)
+  const startAt = localDateTimeToIso(date, rule.startTime)
+  const endAt = localDateTimeToIso(date, rule.endTime)
   if (endAt <= startAt) throw new RangeError('Class end must be after class start.')
   return { startAt, endAt }
 }

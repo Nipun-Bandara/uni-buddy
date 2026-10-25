@@ -122,4 +122,14 @@ Today → Start work opens a Drawer with an optional current-semester module and
 
 The display calculates elapsed seconds from current time minus the saved startedAt. Visible refreshes run once per second; foreground/focus events recompute immediately. No seconds are incremented or written to storage. Reloading, closing/reopening, and navigating back restore the stored active session. Durations can exceed 24 hours.
 
-The test suite now has 93 cases, including one timezone-specific DST test. Timer tests cover optional fields, trimming, persistence, concurrent starts/stops, module validation, long elapsed gaps, and midnight/multiday formatting. Isolated browser checks also covered General/module/title flows, ticking, foreground catch-up, reload, page close/reopen, two-tab concurrency, stopping, and absence of counter writes.
+The timer milestone brought the test suite to 93 cases, including one timezone-specific DST test. Timer tests cover optional fields, trimming, persistence, concurrent starts/stops, module validation, long elapsed gaps, and midnight/multiday formatting. Isolated browser checks also covered General/module/title flows, ticking, foreground catch-up, reload, page close/reopen, two-tab concurrency, stopping, and absence of counter writes.
+
+## Sessions history and correction
+
+Sessions lists completed work grouped by its local start date, newest dates and starts first, with Today/Yesterday headings. Rows show module (or General), optional title, derived duration, and local start/end times. Overnight rows also show the end date. The active timer is displayed separately and can be stopped; completed-history operations do not alter it.
+
+Add session or tap a history row to open the editor Drawer. Module and title are optional. Date, start/end time, and end date support overnight and multiday corrections. Zod validates real local dates/times, requires end after start, and rejects future completions and nonexistent DST wall-clock times. Metadata-only edits preserve the original seconds, fractional seconds, and ambiguous-DST instants. All saves/deletes are transactional; active sessions cannot be edited/deleted through history. Delete requires confirmation.
+
+`src/lib/session-history.ts` contains grouping, labels, duration formatting, and validation. `src/db/session-history.ts` persists completed entries. The existing schema is sufficient; no duplicate duration field or migration is added. A shared local-date/time-to-ISO helper in `src/lib/dates.ts` is also reused by attendance.
+
+The suite now has 105 cases (two DST-specific tests run in America/New_York). Checks passed across six timezones. Mobile browser verification covered ordering, manual entry, editing module/title/times, confirmation cancellation/deletion, reload persistence, hour and overnight boundaries, active-timer separation, and navigation.
