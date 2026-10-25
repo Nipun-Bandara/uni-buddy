@@ -1,3 +1,4 @@
+import { WorkTimer } from '@/components/work/work-timer'
 import { format } from 'date-fns'
 import { useLocalNow } from '@/hooks/use-local-now'
 import { TodayClasses } from '@/components/today/today-classes'
@@ -18,6 +19,7 @@ export function TodayPage() {
         <p className="text-sm text-muted-foreground">{format(now, 'EEEE')}</p>
         <time dateTime={today} className="mt-1 block text-2xl font-semibold tracking-tight">{format(now, 'd MMMM')}</time>
       </header>
+      <WorkTimer />
       <TodayClasses date={today} localTime={toLocalTime(now)} />
       <section aria-labelledby="upcoming-heading" className="mt-8 space-y-3">
         <div className="flex items-center justify-between gap-3">

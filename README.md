@@ -1,6 +1,6 @@
 # Student Productivity
 
-A local-first, mobile-first student productivity PWA with semester, module, academic-date, and timetable-rule management. Recurrence matching is provided as pure logic. Manual attendance is recorded on demand. No backend, authentication, remote data, seed records, timer, or push notifications.
+A local-first, mobile-first student productivity PWA with semester, module, academic-date, and timetable-rule management. Recurrence matching is provided as pure logic. Manual attendance is recorded on demand. A persistent work timer is available on Today. No backend, authentication, remote data, seed records, or push notifications.
 
 ## Development
 
@@ -55,7 +55,7 @@ One Dexie instance opens `StudentProductivityDB`, schema version 5, before rende
 - Timestamps: ISO 8601 instants; helpers serialize to UTC.
 - Weekdays: Monday = 0 through Sunday = 6. Database version 3 migrates older Sunday-based values while preserving the actual weekday.
 - Repeat interval: 1 = weekly, 2 = alternate weeks; anchorDate is a date in a known occurrence week. Pure recurrence matching is implemented in `src/lib/recurrence.ts`; occurrence generation is not implemented.
-- A work session without endedAt is active. Missing values are not indexed; future active-session queries should filter records rather than query an undefined index key.
+- A work session without endedAt is active. Missing values are not indexed; active-session queries filter records rather than querying an undefined index key.
 - Settings use recursively JSON-compatible values. Zod date/time validators are provided; database writes are not automatically validated.
 
 IndexedDB stays in the browser on the device. Clearing site data removes it. No persistence/backup feature is implemented.
@@ -112,4 +112,14 @@ Ended classes on Today offer Attended, Missed, and Cancelled. Recorded statuses 
 
 Database version 4 removes legacy rule/date duplicates before version 5 adds `&[scheduleRuleId+date]`. Since old records lack modification timestamps, migration prefers a non-pending record, then the greatest primary-key ID as a deterministic tie-breaker. The unique index also protects writes outside the attendance service. Existing timetable deletion guards preserve linked occurrences.
 
-Attendance service/migration tests use development-only fake-indexeddb. The full suite has 79 cases; the DST-gap case runs specifically in America/New_York and is skipped in other zones. Browser checks covered all statuses, editing/cancelling edits, reloads, no writes until action, concurrent updates without duplicates, Colombo ISO timestamps, navigation, and mobile layout. No push notifications are implemented.
+Attendance service/migration tests use development-only fake-indexeddb. The attendance milestone brought the suite to 79 cases; the DST-gap case runs specifically in America/New_York and is skipped in other zones. Browser checks covered all statuses, editing/cancelling edits, reloads, no writes until action, concurrent updates without duplicates, Colombo ISO timestamps, navigation, and mobile layout. No push notifications are implemented.
+
+## Work timer
+
+Today → Start work opens a Drawer with an optional current-semester module and optional title. General work is available even without a semester. The reusable `WorkTimer` component lives in `src/components/work/work-timer.tsx`.
+
+`src/db/work-sessions.ts` provides `getActiveWorkSession()`, `startWorkSession({ moduleId?, title? })`, and `stopWorkSession(id)`. A read/write transaction checks for any record without endedAt before adding a session, preventing simultaneous starts across tabs. Stop records the current ISO timestamp and is idempotent: repeated taps preserve the original endedAt. The existing schema is sufficient; no migration or new counter fields are needed.
+
+The display calculates elapsed seconds from current time minus the saved startedAt. Visible refreshes run once per second; foreground/focus events recompute immediately. No seconds are incremented or written to storage. Reloading, closing/reopening, and navigating back restore the stored active session. Durations can exceed 24 hours.
+
+The test suite now has 93 cases, including one timezone-specific DST test. Timer tests cover optional fields, trimming, persistence, concurrent starts/stops, module validation, long elapsed gaps, and midnight/multiday formatting. Isolated browser checks also covered General/module/title flows, ticking, foreground catch-up, reload, page close/reopen, two-tab concurrency, stopping, and absence of counter writes.
