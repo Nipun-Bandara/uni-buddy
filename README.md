@@ -58,7 +58,7 @@ One Dexie instance opens `StudentProductivityDB`, schema version 5, before rende
 - A work session without endedAt is active. Missing values are not indexed; active-session queries filter records rather than querying an undefined index key.
 - Settings use recursively JSON-compatible values. Zod date/time validators are provided; database writes are not automatically validated.
 
-IndexedDB stays in the browser on the device. Clearing site data removes it. No persistence/backup feature is implemented.
+IndexedDB stays in the browser on the device. Clearing site data removes it. Local JSON backup/restore is available in Settings → Data.
 
 ## Routing and offline behavior
 
@@ -158,4 +158,14 @@ Hand-checked weekly fixture (all records stay in an isolated test database):
 
 Three attended and one missed class give 75% and 3 / 4. A cancelled 4h class, a pending class, and an active work timer contribute no productive time. Adding an earlier-month attended 2h class and 1h of General work yields a month total of 16h 30m, 80%, and 4 / 5.
 
-The full suite has 118 cases, with three DST-specific cases running in America/New_York. Checks across six timezones cover week/month and year boundaries, DST, clipped sessions, partial minutes, cancelled/pending exclusion, General work, percentage rounding, missing references, invalid durations, and empty data. Mobile browser checks confirmed the fixture totals, tab switching, live updates, reload, navigation, and no database writes when viewing insights.
+The Insights milestone brought the suite to 118 cases, with three DST-specific cases running in America/New_York. Checks across six timezones cover week/month and year boundaries, DST, clipped sessions, partial minutes, cancelled/pending exclusion, General work, percentage rounding, missing references, invalid durations, and empty data. Mobile browser checks confirmed the fixture totals, tab switching, live updates, reload, navigation, and no database writes when viewing insights.
+
+## Local backup and restore
+
+Settings → Data exports a downloadable `student-productivity-backup-YYYY-MM-DD.json` using the device's local date. The JSON envelope includes backup format `version: 1`, ISO `exportedAt`, and arrays for semesters, modules, scheduleRules, classOccurrences, workSessions, settings, and academicDates. The active timer is included without an endedAt; timestamp precision and date-only values remain unchanged. Backup format version 1 uses Monday = 0 weekdays independently of the current IndexedDB schema version.
+
+`src/lib/backup.ts` uses Zod to validate every record, date/time range, nested JSON setting value, unique ID/key, compound occurrence key, relation, and the single-active-timer invariant. Unsupported format versions, invalid JSON, and invalid records show separate useful messages. Six-table v1 backups may omit academicDates; they restore that table as empty. Other required tables must be present. Future schemas/backup formats should be explicitly versioned rather than silently accepting unknown fields.
+
+`src/db/backup.ts` reads all tables inside one read transaction for a consistent export. Restore revalidates before writing, then clears and inserts all seven tables inside one read/write transaction. Any failure rolls back the complete replacement. The Settings AlertDialog explains that all local data, including the current active timer state, will be replaced and requires explicit confirmation; cancellation does not write anything.
+
+The full suite now has 130 cases (three DST-specific tests run in America/New_York), passing across six timezones. Backup checks cover full export/change/import round trips, persistence after reopening, nested settings, active timers, academic dates, invalid/missing fields, unsupported versions, duplicates, broken references, empty backups, and forced-failure rollback. An isolated mobile browser additionally verified the actual file download/name, validation errors without changes, confirmation cancellation, transactional rollback, retry, reload, and restored timer state. Test fixtures stay outside the production database.
