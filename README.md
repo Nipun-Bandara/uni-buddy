@@ -1,6 +1,6 @@
 # Student Productivity
 
-A local-first, mobile-first student productivity PWA with semester, module, academic-date, and timetable-rule management. Recurrence matching is provided as pure logic. No backend, authentication, remote data, seed records, timer, or attendance features.
+A local-first, mobile-first student productivity PWA with semester, module, academic-date, and timetable-rule management. Recurrence matching is provided as pure logic. Manual attendance is recorded on demand. No backend, authentication, remote data, seed records, timer, or push notifications.
 
 ## Development
 
@@ -48,7 +48,7 @@ PWA theme/background colors are independent browser metadata: update them in `vi
 
 ## Local data conventions
 
-One Dexie instance opens `StudentProductivityDB`, schema version 3, before rendering. Tables: semesters, modules, scheduleRules, classOccurrences, workSessions, settings, academicDates. Records start empty. Forms use Zod validation and reference guards protect related records during deletion. Dexie live queries keep lists current.
+One Dexie instance opens `StudentProductivityDB`, schema version 5, before rendering. Tables: semesters, modules, scheduleRules, classOccurrences, workSessions, settings, academicDates. Records start empty. Forms use Zod validation and reference guards protect related records during deletion. Dexie live queries keep lists current.
 
 - Calendar dates: `YYYY-MM-DD`, interpreted locally; never parse with `new Date(dateString)` or serialize date-only values to UTC.
 - Local times: `HH:mm`, 24-hour clock.
@@ -78,7 +78,7 @@ Production TypeScript/build and Oxlint passed. Headless Chromium checks passed f
 
 Schedule → Classes lists rules for the current semester, grouped Monday–Sunday and sorted by start time. Add or tap a class to open the mobile Drawer. Start/end dates default to the semester; the first occurrence must match the selected weekday and lie within that period. Times are stored as HH:mm, and dates stay YYYY-MM-DD.
 
-Database version 3 converts saved v1/v2 weekdays from Sunday = 0 to Monday = 0 without changing their meaning. Class deletion requires confirmation and protects any existing linked occurrences. The timetable UI manages rules only. Pure recurrence helpers are available separately; the Today screen uses them to display classes, and no occurrences/attendance are generated.
+Database version 3 converts saved v1/v2 weekdays from Sunday = 0 to Monday = 0 without changing their meaning. Class deletion requires confirmation and protects any existing linked occurrences. The timetable UI manages rules only. Pure recurrence helpers are available separately; the Today screen uses them to display classes; occurrence records are created only by explicit attendance actions.
 
 The academic calendar remains available in its own Schedule tab; Today’s View calendar link opens it directly. Timetable checks covered create/edit/delete/reload, weekday/time sorting, validation, mobile Drawer layout, empty states, and the v2→v3 migration.
 
@@ -100,6 +100,16 @@ The 56-case suite covers weekly/fortnightly matching, inclusive bounds, anchor w
 
 Today shows the device's local weekday/date and the active semester's classes, matched with `getScheduleForDate()` and sorted by start time. Module accents stay small. Each class shows its time, module, type, and optional location. A slot is current from its start (inclusive) until its end (exclusive); labels distinguish NOW, Ended, and Upcoming without implying attendance.
 
-The local clock refreshes on minute boundaries, focus, and return to the foreground, including day rollover. Dexie live queries update saved timetable/module changes. Academic dates remain below the classes, and the empty state says No classes today. Rendering does not write ClassOccurrence records or add attendance controls.
+The local clock refreshes on minute boundaries, focus, and return to the foreground, including day rollover. Dexie live queries update saved timetable/module changes. Academic dates remain below the classes, and the empty state says No classes today. Rendering does not write ClassOccurrence records. Ended classes offer manual attendance controls.
 
-Verification covered weekly and alternating lab weeks, skipped/no-class days, chronological sorting, state boundaries, live foreground/minute/midnight updates, bottom navigation, and a local date west of UTC. Unit tests now include eight additional class-time-state cases (64 total tests).
+Verification covered weekly and alternating lab weeks, skipped/no-class days, chronological sorting, state boundaries, live foreground/minute/midnight updates, bottom navigation, and a local date west of UTC. Unit tests include eight additional class-time-state cases.
+
+## Manual attendance
+
+Ended classes on Today offer Attended, Missed, and Cancelled. Recorded statuses can be tapped to change them. Attendance is distinct from the time-slot labels; future unrecorded classes show no attendance controls. Browsing/reloading never generates occurrence rows.
+
+`src/db/attendance.ts` provides `getAttendanceForClass(ruleId, date)` and `setAttendance(rule, date, status)`. Reads return undefined when unrecorded. The setter uses a read/write transaction and the saved rule, creating an occurrence only on a matching date; subsequent status changes keep the same ID and original timestamps. It supports pending explicitly, too. New records combine local calendar-date and HH:mm components before serializing ISO instants; nonexistent DST wall-clock times are rejected instead of silently shifted.
+
+Database version 4 removes legacy rule/date duplicates before version 5 adds `&[scheduleRuleId+date]`. Since old records lack modification timestamps, migration prefers a non-pending record, then the greatest primary-key ID as a deterministic tie-breaker. The unique index also protects writes outside the attendance service. Existing timetable deletion guards preserve linked occurrences.
+
+Attendance service/migration tests use development-only fake-indexeddb. The full suite has 79 cases; the DST-gap case runs specifically in America/New_York and is skipped in other zones. Browser checks covered all statuses, editing/cancelling edits, reloads, no writes until action, concurrent updates without duplicates, Colombo ISO timestamps, navigation, and mobile layout. No push notifications are implemented.

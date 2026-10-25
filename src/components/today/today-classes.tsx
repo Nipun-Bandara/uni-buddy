@@ -1,3 +1,4 @@
+import { AttendanceControls } from '@/components/today/attendance-controls'
 import { Card } from '@/components/ui/card'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Link } from 'react-router'
@@ -13,8 +14,9 @@ export function TodayClasses({ date, localTime }: { date: string; localTime: str
       const semester = await db.semesters.toCollection().first()
       const modules = semester ? await db.modules.where('semesterId').equals(semester.id).toArray() : []
       const rules = modules.length ? await db.scheduleRules.where('moduleId').anyOf(modules.map(module => module.id)).toArray() : []
-      return { semester, modules, rules: getScheduleForDate(rules, date), failed: false }
-    } catch { return { semester: undefined, modules: [], rules: [], failed: true } }
+      const occurrences = await db.classOccurrences.where('date').equals(date).toArray()
+      return { semester, modules, occurrences, rules: getScheduleForDate(rules, date), failed: false }
+    } catch { return { semester: undefined, modules: [], occurrences: [], rules: [], failed: true } }
   }, [date])
 
   return <section aria-labelledby="today-classes-heading" className="mt-8 space-y-4">
@@ -26,7 +28,7 @@ export function TodayClasses({ date, localTime }: { date: string; localTime: str
       {result.rules.map(rule => {
         const module = result.modules.find(module => module.id === rule.moduleId)!
         const state = getClassTimeState(rule.startTime, rule.endTime, localTime)
-        return <li key={rule.id}><Card className={cn('gap-0 p-4 shadow-none', state === 'current' && 'border-primary/50 bg-accent/40')}>
+        return <li key={`${date}:${rule.id}`}><Card className={cn('gap-0 p-4 shadow-none', state === 'current' && 'border-primary/50 bg-accent/40')}>
           <div className="flex items-start gap-3">
             <span aria-hidden="true" className="mt-1.5 size-2.5 shrink-0 rounded-full border border-foreground/20 bg-muted" style={module.color ? { backgroundColor: module.color } : undefined} />
             <div className="min-w-0 flex-1 space-y-1">
@@ -39,6 +41,8 @@ export function TodayClasses({ date, localTime }: { date: string; localTime: str
               {rule.location && <p className="break-words text-sm text-muted-foreground">{rule.location}</p>}
             </div>
           </div>
+          <AttendanceControls rule={rule} date={date} ended={state === 'completed'} label={`${module.name}, ${rule.startTime}`}
+            occurrence={result.occurrences.find(occurrence => occurrence.scheduleRuleId === rule.id)} />
         </Card></li>
       })}
     </ul>}

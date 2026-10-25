@@ -30,6 +30,7 @@ export interface ScheduleRule {
   location?: string
 }
 export type AttendanceStatus = 'pending' | 'attended' | 'missed' | 'cancelled'
+/** On-demand per-date attendance record/override; (scheduleRuleId, date) is unique. */
 export interface ClassOccurrence {
   id: string
   scheduleRuleId: string

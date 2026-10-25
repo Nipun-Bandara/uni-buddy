@@ -13,3 +13,9 @@ export const schemaV2 = {
   ...schemaV1,
   academicDates: 'id, semesterId',
 }
+
+/** Version 4 removes legacy duplicates before version 5 adds this unique index. */
+export const schemaV5 = {
+  ...schemaV2,
+  classOccurrences: 'id, scheduleRuleId, date, &[scheduleRuleId+date]',
+}
