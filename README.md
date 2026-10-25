@@ -78,7 +78,7 @@ Production TypeScript/build and Oxlint passed. Headless Chromium checks passed f
 
 Schedule → Classes lists rules for the current semester, grouped Monday–Sunday and sorted by start time. Add or tap a class to open the mobile Drawer. Start/end dates default to the semester; the first occurrence must match the selected weekday and lie within that period. Times are stored as HH:mm, and dates stay YYYY-MM-DD.
 
-Database version 3 converts saved v1/v2 weekdays from Sunday = 0 to Monday = 0 without changing their meaning. Class deletion requires confirmation and protects any existing linked occurrences. The timetable UI manages rules only. Pure recurrence helpers are available separately; the Today screen does not yet use them, and no occurrences/attendance are generated.
+Database version 3 converts saved v1/v2 weekdays from Sunday = 0 to Monday = 0 without changing their meaning. Class deletion requires confirmation and protects any existing linked occurrences. The timetable UI manages rules only. Pure recurrence helpers are available separately; the Today screen uses them to display classes, and no occurrences/attendance are generated.
 
 The academic calendar remains available in its own Schedule tab; Today’s View calendar link opens it directly. Timetable checks covered create/edit/delete/reload, weekday/time sorting, validation, mobile Drawer layout, empty states, and the v2→v3 migration.
 
@@ -86,7 +86,7 @@ The academic calendar remains available in its own Schedule tab; Today’s View 
 
 `src/lib/recurrence.ts` exports `occursOnDate(rule, date)` and `getScheduleForDate(rules, date)`. Dates are YYYY-MM-DD calendar labels. The helpers use explicit Gregorian components on a fixed arithmetic axis, without converting date-only values through a device timezone. Rules match inclusive start/end dates, Monday-based weekdays, and weekly/fortnightly intervals. The anchor identifies an occurrence week (Monday–Sunday); earlier matching weeks inside the period also qualify. Invalid date fields, reversed ranges, invalid weekdays, and unsupported intervals return false. The schedule helper returns a new array sorted by HH:mm start time; equal times retain input order.
 
-These helpers do not query storage, apply break/holiday exceptions, mutate rules, generate occurrences, or update the UI.
+These helpers do not query storage, apply break/holiday exceptions, mutate rules, or generate occurrences. Today reads saved rules and uses the helpers for display.
 
 ```sh
 npm test                 # Run unit tests once
@@ -95,3 +95,11 @@ npm run test:timezones   # Run the suite in six separate timezone environments
 ```
 
 The 56-case suite covers weekly/fortnightly matching, inclusive bounds, anchor weeks, Monday/Sunday transitions, dates before anchors, month/year changes, leap days, DST, malformed dates, and stable non-mutating sorting. The timezone matrix runs UTC, Asia/Colombo, America/New_York, Europe/Berlin, Pacific/Kiritimati, and Pacific/Apia (including its historical skipped day). Vitest uses its own configuration and does not load production/PWA plugins.
+
+## Today screen
+
+Today shows the device's local weekday/date and the active semester's classes, matched with `getScheduleForDate()` and sorted by start time. Module accents stay small. Each class shows its time, module, type, and optional location. A slot is current from its start (inclusive) until its end (exclusive); labels distinguish NOW, Ended, and Upcoming without implying attendance.
+
+The local clock refreshes on minute boundaries, focus, and return to the foreground, including day rollover. Dexie live queries update saved timetable/module changes. Academic dates remain below the classes, and the empty state says No classes today. Rendering does not write ClassOccurrence records or add attendance controls.
+
+Verification covered weekly and alternating lab weeks, skipped/no-class days, chronological sorting, state boundaries, live foreground/minute/midnight updates, bottom navigation, and a local date west of UTC. Unit tests now include eight additional class-time-state cases (64 total tests).

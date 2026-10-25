@@ -1,23 +1,24 @@
-import { useEffect, useState } from 'react'
+import { format } from 'date-fns'
+import { useLocalNow } from '@/hooks/use-local-now'
+import { TodayClasses } from '@/components/today/today-classes'
 import { Link } from 'react-router'
 import { useAcademicDates } from '@/hooks/use-academic-dates'
 import { AcademicDateList } from '@/components/academic/academic-date-list'
-import { toCalendarDate } from '@/lib/dates'
+import { toCalendarDate, toLocalTime } from '@/lib/dates'
 
 export function TodayPage() {
   const result = useAcademicDates()
-  const [today, setToday] = useState(() => toCalendarDate(new Date()))
-  useEffect(() => {
-    const refresh = () => setToday(toCalendarDate(new Date()))
-    const timer = window.setInterval(refresh, 60_000)
-    window.addEventListener('focus', refresh)
-    document.addEventListener('visibilitychange', refresh)
-    return () => { window.clearInterval(timer); window.removeEventListener('focus', refresh); document.removeEventListener('visibilitychange', refresh) }
-  }, [])
+  const now = useLocalNow()
+  const today = toCalendarDate(now)
   const upcoming = result?.dates.filter(item => item.endDate >= today) ?? []
   return (
     <section aria-labelledby="page-heading">
-      <h1 id="page-heading" className="text-2xl font-semibold tracking-tight">Today</h1>
+      <h1 id="page-heading" className="sr-only">Today</h1>
+      <header>
+        <p className="text-sm text-muted-foreground">{format(now, 'EEEE')}</p>
+        <time dateTime={today} className="mt-1 block text-2xl font-semibold tracking-tight">{format(now, 'd MMMM')}</time>
+      </header>
+      <TodayClasses date={today} localTime={toLocalTime(now)} />
       <section aria-labelledby="upcoming-heading" className="mt-8 space-y-3">
         <div className="flex items-center justify-between gap-3">
           <h2 id="upcoming-heading" className="text-lg font-semibold">Current & upcoming</h2>
