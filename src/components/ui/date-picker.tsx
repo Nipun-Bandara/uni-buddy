@@ -32,7 +32,7 @@ export function DatePicker({ id, name, label, value, onChange, disabled, invalid
     </PopoverTrigger>
     <PopoverContent align="end" aria-label={`Choose ${label.toLowerCase()}`}>
       <Calendar mode="single" required captionLayout="dropdown" autoFocus
-        className="mx-auto [--cell-size:2.25rem]"
+        className="mx-auto"
         selected={value ? parseCalendarDate(value) : undefined}
         defaultMonth={value ? parseCalendarDate(value) : defaultDate ? parseCalendarDate(defaultDate) : today}
         startMonth={new Date(1900, 0)} endMonth={new Date(2100, 11)} disabled={disabled}

@@ -11,7 +11,7 @@ const links = [
 
 export function BottomNav() {
   return (
-    <nav aria-label="Main navigation" className="sticky bottom-0 grid grid-cols-4 border-t bg-background px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+    <nav aria-label="Main navigation" className="grid shrink-0 grid-cols-4 border-t bg-background pl-[max(0.5rem,env(safe-area-inset-left))] pr-[max(0.5rem,env(safe-area-inset-right))] pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
       {links.map(({ to, label, icon: Icon }) => (
         <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => cn(
           'flex min-h-14 flex-col items-center justify-center gap-1 rounded-md text-xs focus-visible:outline-2 focus-visible:outline-ring',

@@ -16,7 +16,7 @@ export function AcademicCalendar() {
     <p className="mt-3 text-sm text-muted-foreground">Your academic calendar. Choose a marked day to see its dates and weeks.</p>
     <div className="mt-6 rounded-lg border">
       <Calendar mode="single" required selected={selected} onSelect={date => { if (date) setSelected(date) }}
-        className="mx-auto [--cell-size:2.5rem]" captionLayout="dropdown"
+        className="mx-auto" captionLayout="dropdown"
         startMonth={new Date(1900, 0)} endMonth={new Date(2100, 11)}
         modifiers={{ academic: date => {
           const value = toCalendarDate(date)

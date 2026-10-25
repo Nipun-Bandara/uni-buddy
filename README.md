@@ -19,32 +19,28 @@ Development serves source code; use the production preview to check service-work
 ## Structure
 
 ```text
-public/                      Temporary PNG PWA and Apple icons
+public/                      PNG PWA, maskable, and Apple icons
 src/
   app/                       App.tsx and router.tsx
   components/
     layout/                  app-shell.tsx
     navigation/              bottom-nav.tsx
-    ui/                      Empty; ready for your shadcn components
+    ui/                      Installed shadcn components
   pages/                     Today, Sessions, Schedule, Insights, Settings
   db/                        db.ts, schema.ts, types.ts
   lib/                       utils.ts, dates.ts, ids.ts
-  hooks/                     Empty; ready for hooks
+  hooks/                     Local clock and visible-viewport hooks
   styles/globals.css         Tailwind integration and shadcn tokens
-  main.tsx                   Local DB initialization and PWA registration
+  main.tsx                   Local DB initialization
 ```
 
 ## Theme and components
 
-Replace the `:root` token block in `src/styles/globals.css` with your generated shadcn theme. Add its `.dark` block immediately after it if included. Keep the imports, `@custom-variant`, `@theme inline` mappings, and base layer; merge additional mappings from your theme if it introduces more tokens. There is no dark-mode switching logic.
+The existing `src/styles/globals.css` supplies the shadcn theme and remains unchanged by the PWA polish. There is no dark-mode switching logic.
 
-`components.json`, Vite, and TypeScript all use `@/*` → `src/*`. No individual shadcn components are installed. You can now manually add your preferred components, for example:
+`components.json`, Vite, and TypeScript all use `@/*` → `src/*`. Existing shadcn components live in `src/components/ui`. Shared component variants are exported from separate files to keep React Fast Refresh checks clean.
 
-```sh
-npx shadcn@latest add button
-```
-
-PWA theme/background colors are independent browser metadata: update them in `vite.config.ts` and the theme-color in `index.html` when changing your theme. Replace the temporary icons in `public/` when ready.
+PWA theme/background colors are independent browser metadata: update them in `vite.config.ts` and the theme-color in `index.html` when changing your theme. The existing 192px/512px PNGs, separate 512px maskable icon, and 180px Apple touch icon are configured in `public/`.
 
 ## Local data conventions
 
@@ -62,13 +58,17 @@ IndexedDB stays in the browser on the device. Clearing site data removes it. Loc
 
 ## Routing and offline behavior
 
-Routes: `/`, `/sessions`, `/schedule`, `/insights`, `/settings`. Settings is reached from the header; the other four routes share the bottom navigation. The 28rem shell includes safe-area padding and navigation in document flow.
+Routes: `/`, `/sessions`, `/schedule`, `/insights`, `/settings`. Settings is reached from the header; the other four routes share the bottom navigation. The 28rem shell fills the dynamic viewport. Its header and bottom navigation reserve their own space around a scrolling main region; bottom padding keeps the last row reachable above navigation. Header/navigation include top, bottom, left, and right safe-area padding, alongside `viewport-fit=cover` ([WebKit guidance](https://webkit.org/blog/7929/designing-websites-for-iphone-x/)).
 
-The production service worker precaches the application shell and falls back to index.html for navigation, enabling offline routes after the first successful load and service-worker activation. Updates activate automatically when detected, following the [Vite PWA auto-update strategy](https://vite-pwa-org.netlify.app/guide/auto-update). Revisit this policy when adding unsaved form state.
+The production service worker precaches the application shell, every lazy route chunk, styles, and icons, then falls back to index.html for navigation. All routes can reopen offline after the first successful load and service-worker activation. IndexedDB needs no network. Pages are split into smaller production bundles.
+
+Updates follow the [Vite PWA prompt strategy](https://vite-pwa-org.netlify.app/guide/prompt-for-update.html). A ready update offers Reload or Later, allowing open forms to remain intact until an explicit reload. Returning to the foreground or going online checks for updates at most once per minute. Offline update-check failures retain the cached app. No notifications are requested or implemented.
+
+Inputs and selection controls use 16px text; primary buttons, navigation, and select options have comfortable tap targets. Long selected module names wrap. Date popovers fit a 320px screen; native time inputs retain their iOS picker. Drawers use dynamic viewport bounds, scrollable forms, and a safe-area footer. Dialogs also follow the [Visual Viewport](https://developer.mozilla.org/en-US/docs/Web/API/VisualViewport) to stay scrollable above the software keyboard.
 
 `vercel.json` rewrites extensionless SPA routes to index.html while preserving static asset requests. No deployment was performed.
 
-The latest Vite React TypeScript starter uses Oxlint; `npm run lint` retains that current starter tool rather than introducing ESLint. Tailwind uses its current Vite plugin; shadcn is manually configured following the [official Vite setup](https://ui.shadcn.com/docs/installation/vite) to avoid adding UI components.
+The latest Vite React TypeScript starter uses Oxlint; `npm run lint` retains that current starter tool rather than introducing ESLint. Tailwind uses its current Vite plugin; shadcn is manually configured following the [official Vite setup](https://ui.shadcn.com/docs/installation/vite) using the installed UI components.
 
 ## Verification performed
 
@@ -169,3 +169,9 @@ Settings → Data exports a downloadable `student-productivity-backup-YYYY-MM-DD
 `src/db/backup.ts` reads all tables inside one read transaction for a consistent export. Restore revalidates before writing, then clears and inserts all seven tables inside one read/write transaction. Any failure rolls back the complete replacement. The Settings AlertDialog explains that all local data, including the current active timer state, will be replaced and requires explicit confirmation; cancellation does not write anything.
 
 The full suite now has 130 cases (three DST-specific tests run in America/New_York), passing across six timezones. Backup checks cover full export/change/import round trips, persistence after reopening, nested settings, active timers, academic dates, invalid/missing fields, unsupported versions, duplicates, broken references, empty backups, and forced-failure rollback. An isolated mobile browser additionally verified the actual file download/name, validation errors without changes, confirmation cancellation, transactional rollback, retry, reload, and restored timer state. Test fixtures stay outside the production database.
+
+## PWA / iPhone polish verification
+
+Lint, TypeScript, production build, and the full unit suite pass without build/lint warnings. Production browser checks use an isolated database: install/control the worker online, close the page, go offline, and reopen an unvisited Settings route. All five pages and the academic calendar load offline at 320px, 375px, and 430px widths with long module names and no horizontal page overflow. Navigation stays separate from content and the final history row remains fully reachable. Manual session writes and a work timer survive offline reloads.
+
+A reduced-height 320px viewport checks scrolling Dialogs/Drawers, reachable actions, 16px text, long module selection, and calendar popover fit. A simulated second production build verifies that an open form retains its unsaved title, Later defers activation, and Reload explicitly activates the waiting worker. No browser runtime/console errors were observed. These are Chromium mobile checks; actual iPhone Safari keyboard behavior, Home Screen installation, and physical notch/home-indicator insets still require device verification.
