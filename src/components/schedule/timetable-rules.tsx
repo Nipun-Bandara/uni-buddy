@@ -1,7 +1,8 @@
 import { useRef, useState, type FormEvent } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Link } from 'react-router'
-import { Plus, ChevronRight } from 'lucide-react'
+import { Plus } from 'lucide-react'
+import { WeekTimetable } from '@/components/schedule/week-timetable'
 import { db } from '@/db/db'
 import type { ScheduleRule } from '@/db/types'
 import { createId } from '@/lib/ids'
@@ -101,30 +102,11 @@ export function TimetableRules() {
   const error = (key: keyof Fields) => errors[key] ? <p id={`class-${key}-error`} role="alert" className="text-sm text-destructive">{errors[key]}</p> : null
   const describedBy = (key: keyof Fields) => errors[key] ? `class-${key}-error` : undefined
 
-  return <div className="mt-4 space-y-4">
-    <p className="text-sm text-muted-foreground">Your weekly class rules. Dates and repeat patterns are saved for future timetable calculations.</p>
+  return <div className="mt-4 min-w-0 space-y-4">
     {result === undefined ? <p role="status">Loading classes…</p> : result.failed ? <p role="alert">Could not load classes. Please reload.</p> : !result.semester ? <p className="text-sm text-muted-foreground">Create a semester in <Link to="/settings" className="underline">Settings</Link> before adding classes.</p> : result.modules.length === 0 ? <p className="text-sm text-muted-foreground">Add modules in <Link to="/settings" className="underline">Settings</Link> before adding classes.</p> : <>
       <Button ref={addButton} className="min-h-11" onClick={() => begin()}><Plus aria-hidden="true" />Add class</Button>
       {!result.rules.length && <p className="text-sm text-muted-foreground">No classes yet. Add a class to build your weekly timetable.</p>}
-      {weekdays.map((day, index) => {
-        const rules = result.rules.filter(rule => rule.dayOfWeek === index)
-        if (!rules.length) return null
-        return <section key={day} aria-labelledby={`weekday-${index}`}>
-          <h2 id={`weekday-${index}`} className="border-b pb-2 text-lg font-semibold">{day}</h2>
-          <ul className="divide-y">{rules.map(rule => {
-            const module = result.modules.find(module => module.id === rule.moduleId)!
-            return <li key={rule.id}><button type="button" onClick={() => begin(rule)} aria-label={`Edit ${module.name}, ${day}, ${rule.startTime}`} className="flex min-h-20 w-full items-center gap-3 rounded-md px-1 py-4 text-left hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring">
-              <span aria-hidden="true" className="size-3 shrink-0 rounded-full border border-foreground/20 bg-muted" style={module.color ? { backgroundColor: module.color } : undefined} />
-              <span className="min-w-0 flex-1 space-y-1">
-                <span className="block text-sm font-medium tabular-nums">{rule.startTime} – {rule.endTime}</span>
-                <span className="block break-words font-medium">{module.name}</span>
-                <span className="block text-sm text-muted-foreground">{classTypes[rule.type]} · {rule.repeatEveryWeeks === 1 ? 'Every week' : 'Every 2 weeks'}</span>
-                {rule.location && <span className="block break-words text-sm text-muted-foreground">{rule.location}</span>}
-              </span><ChevronRight aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
-            </button></li>
-          })}</ul>
-        </section>
-      })}
+      {result.rules.length > 0 && <WeekTimetable rules={result.rules} modules={result.modules} onEdit={begin} />}
     </>}
     <p role="status" className="text-sm text-muted-foreground">{status}</p>
     <Drawer open={open} onOpenChange={next => { if (!pending.current && !confirmOpen) setOpen(next) }} dismissible={!busy && !confirmOpen}>

@@ -125,7 +125,7 @@ Production TypeScript/build and Oxlint passed. Headless Chromium checks passed f
 
 ## Timetable rules
 
-Schedule → Classes lists rules for the current semester, grouped Monday–Sunday and sorted by start time. Add or tap a class to open the mobile Drawer. Start/end dates default to the semester; the first occurrence must match the selected weekday and lie within that period. Times are stored as HH:mm, and dates stay YYYY-MM-DD.
+Schedule → Classes shows current-semester rules on a Monday–Sunday time grid. Swipe within the timetable to reach later weekdays; the time axis and weekday headers stay visible while scrolling. Slots use a light module-color tint, the saved module code (or automatic initials), and exact times. A module key gives full names. Alternating rules remain labeled Every 2 weeks; this is a weekly-pattern overview rather than a dated recurrence view. Overlapping classes use separate lanes, and short classes retain at least 48px touch targets. Add or tap a class to open the existing mobile Drawer. Start/end dates default to the semester; the first occurrence must match the selected weekday and lie within that period. Times are stored as HH:mm, and dates stay YYYY-MM-DD.
 
 Database version 3 converts saved v1/v2 weekdays from Sunday = 0 to Monday = 0 without changing their meaning. Class deletion requires confirmation and protects any existing linked occurrences. The timetable UI manages rules only. Pure recurrence helpers are available separately; the Today screen uses them to display classes; occurrence records are created only by explicit attendance actions.
 
