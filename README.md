@@ -1,6 +1,6 @@
 # Student Productivity
 
-Foundation only for a local-first, mobile-first React PWA. No backend, authentication, remote data, seed records, timer, recurrence engine, or attendance features.
+A local-first, mobile-first student productivity PWA with semester, module, academic-date, and timetable-rule management. Recurrence matching is provided as pure logic. No backend, authentication, remote data, seed records, timer, or attendance features.
 
 ## Development
 
@@ -48,13 +48,13 @@ PWA theme/background colors are independent browser metadata: update them in `vi
 
 ## Local data conventions
 
-One Dexie instance opens `StudentProductivityDB`, schema version 1, before rendering. Tables: semesters, modules, scheduleRules, classOccurrences, workSessions, settings. Records start empty. No foreign-key enforcement or business-level validation is introduced yet. `dexie-react-hooks` is installed for future live queries.
+One Dexie instance opens `StudentProductivityDB`, schema version 3, before rendering. Tables: semesters, modules, scheduleRules, classOccurrences, workSessions, settings, academicDates. Records start empty. Forms use Zod validation and reference guards protect related records during deletion. Dexie live queries keep lists current.
 
 - Calendar dates: `YYYY-MM-DD`, interpreted locally; never parse with `new Date(dateString)` or serialize date-only values to UTC.
 - Local times: `HH:mm`, 24-hour clock.
 - Timestamps: ISO 8601 instants; helpers serialize to UTC.
 - Weekdays: Monday = 0 through Sunday = 6. Database version 3 migrates older Sunday-based values while preserving the actual weekday.
-- Repeat interval: 1 = weekly, 2 = alternate weeks; anchorDate is a date in a known occurrence week. Recurrence is not implemented.
+- Repeat interval: 1 = weekly, 2 = alternate weeks; anchorDate is a date in a known occurrence week. Pure recurrence matching is implemented in `src/lib/recurrence.ts`; occurrence generation is not implemented.
 - A work session without endedAt is active. Missing values are not indexed; future active-session queries should filter records rather than query an undefined index key.
 - Settings use recursively JSON-compatible values. Zod date/time validators are provided; database writes are not automatically validated.
 
@@ -78,6 +78,20 @@ Production TypeScript/build and Oxlint passed. Headless Chromium checks passed f
 
 Schedule → Classes lists rules for the current semester, grouped Monday–Sunday and sorted by start time. Add or tap a class to open the mobile Drawer. Start/end dates default to the semester; the first occurrence must match the selected weekday and lie within that period. Times are stored as HH:mm, and dates stay YYYY-MM-DD.
 
-Database version 3 converts saved v1/v2 weekdays from Sunday = 0 to Monday = 0 without changing their meaning. Class deletion requires confirmation and protects any existing linked occurrences. This milestone stores rules only: it does not calculate today’s recurrence or generate occurrences/attendance.
+Database version 3 converts saved v1/v2 weekdays from Sunday = 0 to Monday = 0 without changing their meaning. Class deletion requires confirmation and protects any existing linked occurrences. The timetable UI manages rules only. Pure recurrence helpers are available separately; the Today screen does not yet use them, and no occurrences/attendance are generated.
 
 The academic calendar remains available in its own Schedule tab; Today’s View calendar link opens it directly. Timetable checks covered create/edit/delete/reload, weekday/time sorting, validation, mobile Drawer layout, empty states, and the v2→v3 migration.
+
+## Recurrence helpers and tests
+
+`src/lib/recurrence.ts` exports `occursOnDate(rule, date)` and `getScheduleForDate(rules, date)`. Dates are YYYY-MM-DD calendar labels. The helpers use explicit Gregorian components on a fixed arithmetic axis, without converting date-only values through a device timezone. Rules match inclusive start/end dates, Monday-based weekdays, and weekly/fortnightly intervals. The anchor identifies an occurrence week (Monday–Sunday); earlier matching weeks inside the period also qualify. Invalid date fields, reversed ranges, invalid weekdays, and unsupported intervals return false. The schedule helper returns a new array sorted by HH:mm start time; equal times retain input order.
+
+These helpers do not query storage, apply break/holiday exceptions, mutate rules, generate occurrences, or update the UI.
+
+```sh
+npm test                 # Run unit tests once
+npm run test:watch       # Watch mode
+npm run test:timezones   # Run the suite in six separate timezone environments
+```
+
+The 56-case suite covers weekly/fortnightly matching, inclusive bounds, anchor weeks, Monday/Sunday transitions, dates before anchors, month/year changes, leap days, DST, malformed dates, and stable non-mutating sorting. The timezone matrix runs UTC, Asia/Colombo, America/New_York, Europe/Berlin, Pacific/Kiritimati, and Pacific/Apia (including its historical skipped day). Vitest uses its own configuration and does not load production/PWA plugins.
