@@ -17,7 +17,7 @@ export interface ScheduleRule {
   id: string
   moduleId: string
   type: ClassType
-  /** JavaScript convention: Sunday = 0, Monday = 1, … Saturday = 6. */
+  /** Monday = 0, Tuesday = 1, … Sunday = 6 (database version 3 onward). */
   dayOfWeek: number
   startTime: string
   endTime: string

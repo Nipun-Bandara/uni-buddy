@@ -21,7 +21,7 @@ export function TodayPage() {
       <section aria-labelledby="upcoming-heading" className="mt-8 space-y-3">
         <div className="flex items-center justify-between gap-3">
           <h2 id="upcoming-heading" className="text-lg font-semibold">Current & upcoming</h2>
-          <Link to="/schedule" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">View calendar</Link>
+          <Link to="/schedule?view=calendar" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">View calendar</Link>
         </div>
         {result === undefined ? <p role="status">Loading dates…</p> : result.failed ? <p role="alert">Could not load academic dates. Please reload.</p> : !result.semester ? <p className="text-sm text-muted-foreground">Set up your semester and academic dates in <Link to="/settings" className="underline">Settings</Link>.</p> : upcoming.length ? <AcademicDateList dates={upcoming.slice(0, 6)} today={today} /> : <p className="text-sm text-muted-foreground">No upcoming academic dates. Add breaks, exams, and assignment deadlines in <Link to="/settings" className="underline">Settings</Link>.</p>}
       </section>

@@ -15,6 +15,12 @@ class StudentProductivityDatabase extends Dexie {
     super('StudentProductivityDB')
     this.version(1).stores(schemaV1)
     this.version(2).stores(schemaV2)
+    // v1/v2 used JavaScript weekdays (Sunday = 0). Preserve saved class days.
+    this.version(3).stores(schemaV2).upgrade(async transaction => {
+      await transaction.table<ScheduleRule>('scheduleRules').toCollection().modify(rule => {
+        rule.dayOfWeek = (rule.dayOfWeek + 6) % 7
+      })
+    })
   }
 }
 

@@ -53,7 +53,7 @@ One Dexie instance opens `StudentProductivityDB`, schema version 1, before rende
 - Calendar dates: `YYYY-MM-DD`, interpreted locally; never parse with `new Date(dateString)` or serialize date-only values to UTC.
 - Local times: `HH:mm`, 24-hour clock.
 - Timestamps: ISO 8601 instants; helpers serialize to UTC.
-- Weekdays: Sunday = 0 through Saturday = 6.
+- Weekdays: Monday = 0 through Sunday = 6. Database version 3 migrates older Sunday-based values while preserving the actual weekday.
 - Repeat interval: 1 = weekly, 2 = alternate weeks; anchorDate is a date in a known occurrence week. Recurrence is not implemented.
 - A work session without endedAt is active. Missing values are not indexed; future active-session queries should filter records rather than query an undefined index key.
 - Settings use recursively JSON-compatible values. Zod date/time validators are provided; database writes are not automatically validated.
@@ -73,3 +73,11 @@ The latest Vite React TypeScript starter uses Oxlint; `npm run lint` retains tha
 ## Verification performed
 
 Production TypeScript/build and Oxlint passed. Headless Chromium checks passed for all five direct routes in development and production, all four bottom navigation links and active states, six empty IndexedDB stores, generated manifest/service-worker control, all five production routes and navigation while offline, mobile horizontal overflow, and absence of browser console/runtime errors. Actual iPhone Home Screen installation and hosted Vercel rewrites still require device/deployment verification.
+
+## Timetable rules
+
+Schedule → Classes lists rules for the current semester, grouped Monday–Sunday and sorted by start time. Add or tap a class to open the mobile Drawer. Start/end dates default to the semester; the first occurrence must match the selected weekday and lie within that period. Times are stored as HH:mm, and dates stay YYYY-MM-DD.
+
+Database version 3 converts saved v1/v2 weekdays from Sunday = 0 to Monday = 0 without changing their meaning. Class deletion requires confirmation and protects any existing linked occurrences. This milestone stores rules only: it does not calculate today’s recurrence or generate occurrences/attendance.
+
+The academic calendar remains available in its own Schedule tab; Today’s View calendar link opens it directly. Timetable checks covered create/edit/delete/reload, weekday/time sorting, validation, mobile Drawer layout, empty states, and the v2→v3 migration.
