@@ -132,4 +132,30 @@ Add session or tap a history row to open the editor Drawer. Module and title are
 
 `src/lib/session-history.ts` contains grouping, labels, duration formatting, and validation. `src/db/session-history.ts` persists completed entries. The existing schema is sufficient; no duplicate duration field or migration is added. A shared local-date/time-to-ISO helper in `src/lib/dates.ts` is also reused by attendance.
 
-The suite now has 105 cases (two DST-specific tests run in America/New_York). Checks passed across six timezones. Mobile browser verification covered ordering, manual entry, editing module/title/times, confirmation cancellation/deletion, reload persistence, hour and overnight boundaries, active-timer separation, and navigation.
+The Sessions milestone brought the suite to 105 cases (two DST-specific tests run in America/New_York). Checks passed across six timezones. Mobile browser verification covered ordering, manual entry, editing module/title/times, confirmation cancellation/deletion, reload persistence, hour and overnight boundaries, active-timer separation, and navigation.
+
+## Insights
+
+Insights supports This week (local Monday 00:00 through the next Monday, exclusive) and This month (local month start through the next month start, exclusive). Results update through Dexie live queries and the local clock. No chart library, generated records, or persisted aggregates are used.
+
+Calculations in `src/lib/insights.ts` are pure and documented:
+
+- Attendance = attended / (attended + missed), rounded to a whole percent. Pending, cancelled, and unrecorded classes are excluded; no denominator displays a dash. Classes shows attended / (attended + missed). Counts use the saved occurrence calendar date, within the selected period through today.
+- Class time uses saved startAt/endAt for attended occurrences only. Missed/cancelled/pending classes contribute no time.
+- Independent work uses completed WorkSession timestamps; active sessions are excluded.
+- Productive time = attended class time + completed independent work, including General. Recorded intervals are additive; they are not deduplicated against one another.
+- Durations are clipped to the period boundaries and current time, so overnight/boundary-spanning work contributes only its overlap. Raw milliseconds are summed before formatting minutes.
+- Module totals combine their class and independent work. Work without a module is shown separately as General. Missing old module/rule references retain their totals under explicit fallback labels.
+
+Hand-checked weekly fixture (all records stay in an isolated test database):
+
+| Module | Attended class time | Independent work | Total |
+| --- | --- | --- | --- |
+| Data Mining | 4h | 5h 20m | 9h 20m |
+| Software Engineering | 2h | 0m | 2h |
+| General | 0m | 2h 10m | 2h 10m |
+| Total | 6h | 7h 30m | 13h 30m |
+
+Three attended and one missed class give 75% and 3 / 4. A cancelled 4h class, a pending class, and an active work timer contribute no productive time. Adding an earlier-month attended 2h class and 1h of General work yields a month total of 16h 30m, 80%, and 4 / 5.
+
+The full suite has 118 cases, with three DST-specific cases running in America/New_York. Checks across six timezones cover week/month and year boundaries, DST, clipped sessions, partial minutes, cancelled/pending exclusion, General work, percentage rounding, missing references, invalid durations, and empty data. Mobile browser checks confirmed the fixture totals, tab switching, live updates, reload, navigation, and no database writes when viewing insights.
