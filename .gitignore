@@ -12,6 +12,15 @@ dist
 dist-ssr
 *.local
 
+# Local credentials, deployment metadata, and generated files
+.env
+.env.*
+!.env.example
+.vercel/
+coverage/
+*.tsbuildinfo
+student-productivity-backup-*.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

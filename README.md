@@ -4,10 +4,10 @@ A local-first, mobile-first student productivity PWA with semester, module, acad
 
 ## Development
 
-Requires Node.js 22.12+ (Node 24 recommended) and npm.
+Requires Node.js 24.x and npm (the same major version selected for Vercel builds).
 
 ```sh
-npm install
+npm ci
 npm run dev
 npm run build
 npm run lint
@@ -15,6 +15,55 @@ npm run preview
 ```
 
 Development serves source code; use the production preview to check service-worker caching and offline navigation. A deployed PWA requires HTTPS (localhost is supported for testing). On iPhone, open the deployed site in Safari and choose Share → Add to Home Screen. This project has not been deployed.
+
+## Deploy to Vercel
+
+This is a static Vite app. No server, environment variables, database credentials, or Vercel runtime packages are required. `vercel.json` selects Vite, runs `npm ci` and `npm run build`, serves `dist`, and rewrites extensionless SPA routes to `/index.html`. Requests for assets, the manifest, and service-worker scripts retain their real paths ([Vercel Vite guide](https://vercel.com/docs/frameworks/frontend/vite)). `package.json` selects Node 24.x for builds ([Node version configuration](https://vercel.com/docs/functions/runtimes/node-js/node-js-versions)).
+
+### 1. Push to GitHub
+
+The existing checkout is on `main`, with `origin` already pointing to `https://github.com/Nipun-Bandara/uni-buddy.git`. Keep that remote; no new repository initialization is needed. Sign in to GitHub when prompted, then run:
+
+```sh
+cd /home/nipun/Desktop/uni-buddy
+git status
+git add .gitignore README.md package.json package-lock.json vercel.json src/hooks/.gitkeep src/components/ui/.gitkeep
+git diff --cached --stat
+git commit -m "Prepare static Vercel deployment"
+git push -u origin main
+```
+
+The explicit paths above stage only deployment preparation, including removal of the two unused placeholders. If everything is already committed, skip the add/commit commands and push `main`. Keep `package-lock.json` committed. Build output, dependencies, environment files, `.vercel`, and downloaded personal backups are ignored. Export personal data through Settings → Data before moving to another device or origin; Git does not contain your IndexedDB data.
+
+### 2. Import into Vercel
+
+Sign in at [Vercel](https://vercel.com/new), choose Add New → Project (or Import Git Repository), connect GitHub, and import `Nipun-Bandara/uni-buddy`. If it is missing, grant the Vercel GitHub app access to that repository. Use the repository root and `main` as the production branch ([GitHub import guide](https://vercel.com/docs/git/vercel-for-github)).
+
+### 3. Confirm build settings
+
+The checked-in configuration supplies these values. If the dashboard asks for settings or detection fails, use:
+
+| Setting | Value |
+| --- | --- |
+| Framework Preset | Vite |
+| Root Directory | Repository root (`./`); leave the default unchanged |
+| Install Command | `npm ci` |
+| Build Command | `npm run build` |
+| Output Directory | `dist` |
+| Node.js Version | `24.x` |
+| Environment Variables | None |
+
+Choose Deploy and wait for Ready. Open the resulting production HTTPS URL and directly load/refresh each path: `/`, `/sessions`, `/schedule`, `/insights`, `/settings`. Each should render its page rather than a 404. Use a fresh browser/private tab for this hosted check so an existing service worker does not hide server routing problems. The generated `dist` includes `index.html`, hashed JS/CSS assets, icons, `manifest.webmanifest`, and service-worker files. Do not upload `node_modules` or commit `dist`.
+
+### 4. Open on iPhone
+
+Copy the production HTTPS URL from Vercel and open it in Safari on the iPhone. Use the stable production domain for daily use: local data belongs to each browser/device/origin, so localhost, preview URLs, and the production URL have separate data. To transfer existing records, export a backup from the old app and import it in Settings → Data at the production URL. Nothing is uploaded automatically.
+
+### 5. Add to Home Screen
+
+In Safari, tap Share (or More → Share, depending on the Safari layout), then Add to Home Screen. Leave Open as Web App enabled if shown, choose a name, and tap Add. If the action is missing, use Share → Edit Actions to add it ([Apple instructions](https://support.apple.com/en-lamr/guide/iphone/iphea86e5236/ios)). Open the new icon online once and let the app finish loading, then close it, turn on Airplane Mode, and reopen it to check the cached app. Saved local data should remain available. Updates offer Reload/Later; finish edits before reloading.
+
+Deployment preparation checks: lint and `npm run build` pass without warnings; `dist` contains the static app and generated PWA files. A local production server applying the checked-in rewrite rules rendered all five direct routes and refreshes with service workers blocked, served assets/manifest/worker intact, and returned 404 for a missing asset. Ignore rules were checked and a scan of tracked files found no common credential patterns or tracked environment/build files. No GitHub push or Vercel deployment was performed by the agent. Confirm hosted routing and real iPhone installation after deploying.
 
 ## Structure
 
