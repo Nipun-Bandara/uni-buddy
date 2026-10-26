@@ -11,8 +11,8 @@ const statuses = [
   { value: 'cancelled', label: 'Cancelled', icon: Minus },
 ] as const
 
-export function AttendanceControls({ rule, date, occurrence, ended, label }: {
-  rule: ScheduleRule; date: string; occurrence?: ClassOccurrence; ended: boolean; label: string
+export function AttendanceControls({ rule, date, occurrence, ended, label, timeZone }: {
+  rule: ScheduleRule; date: string; occurrence?: ClassOccurrence; ended: boolean; label: string; timeZone?: string
 }) {
   const [editing, setEditing] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -35,7 +35,7 @@ export function AttendanceControls({ rule, date, occurrence, ended, label }: {
     if (pending.current) return
     pending.current = true; setBusy(true); setFailure('')
     try {
-      await setAttendance(rule, date, next)
+      await setAttendance(rule, date, next, timeZone)
       restoreFocus.current = true
       setEditing(false)
       setMessage(`Attendance saved: ${statuses.find(item => item.value === next)?.label ?? next}.`)

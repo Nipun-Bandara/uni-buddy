@@ -1,3 +1,4 @@
+import { ReminderSync } from '@/components/pwa/reminder-sync'
 import { UpdateNotice } from '@/components/pwa/update-notice'
 import { Settings } from 'lucide-react'
 import { Link, Outlet, useLocation } from 'react-router'
@@ -23,6 +24,7 @@ export function AppShell() {
         </Link>
       </header>
       <UpdateNotice />
+      <ReminderSync />
       <main id="main-content" ref={main} tabIndex={-1} className="min-h-0 flex-1 scroll-py-8 overflow-y-auto overscroll-y-contain py-8 pl-[max(1.25rem,env(safe-area-inset-left))] pr-[max(1.25rem,env(safe-area-inset-right))] outline-none"><Outlet /></main>
       <BottomNav />
     </div>

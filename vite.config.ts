@@ -8,6 +8,8 @@ export default defineConfig({
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   plugins: [react(), tailwindcss(), VitePWA({
     registerType: 'prompt',
+    strategies: 'injectManifest', srcDir: 'src', filename: 'sw.ts',
+    injectManifest: { rollupFormat: 'iife', globPatterns: ['**/*.{js,css,html,png,svg,ico}'] },
     includeAssets: ['apple-touch-icon.png'],
     manifest: {
       id: '/', name: 'Student Productivity', short_name: 'Productivity', lang: 'en',
@@ -20,6 +22,5 @@ export default defineConfig({
         { src: '/pwa-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
       ],
     },
-    workbox: { globPatterns: ['**/*.{js,css,html,png,svg,ico}'], navigateFallback: '/index.html', cleanupOutdatedCaches: true, clientsClaim: true },
   })],
 })

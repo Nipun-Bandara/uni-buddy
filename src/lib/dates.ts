@@ -1,5 +1,6 @@
 import { format, isValid, parse } from 'date-fns'
 import { z } from 'zod'
+import { fromZonedTime, formatInTimeZone } from 'date-fns-tz'
 
 /** Calendar values are local labels, never passed to new Date('YYYY-MM-DD'). */
 export const calendarDateSchema = z.iso.date()
@@ -28,9 +29,15 @@ export function toIsoTimestamp(date: Date): string {
 }
 
 /** Explicit local components → ISO instant. Optional seconds support session corrections. */
-export function localDateTimeToIso(date: string, time: string): string {
+export function localDateTimeToIso(date: string, time: string, timeZone?: string): string {
   calendarDateSchema.parse(date)
   if (!/^([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/.test(time)) throw new RangeError('Choose a valid local time.')
+  if (timeZone) {
+    const wallTime = `${date}T${time.length === 5 ? `${time}:00` : time}`
+    const instant = fromZonedTime(wallTime, timeZone)
+    if (!Number.isFinite(instant.getTime()) || formatInTimeZone(instant, timeZone, "yyyy-MM-dd'T'HH:mm:ss") !== wallTime) throw new RangeError('This local date/time does not exist in the timetable timezone.')
+    return instant.toISOString()
+  }
   const instant = parseCalendarDate(date)
   const [hours, minutes, seconds = 0] = time.split(':').map(Number)
   instant.setHours(hours, minutes, seconds, 0)

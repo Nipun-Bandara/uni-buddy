@@ -1,3 +1,4 @@
+import { RemindersSection } from '@/components/settings/reminders-section'
 import { DataSection } from '@/components/settings/data-section'
 import { ModulesSection } from '@/components/settings/modules-section'
 import { AcademicDatesSection } from '@/components/settings/academic-dates-section'
@@ -10,6 +11,7 @@ export function SettingsPage() {
       <SemesterSection />
       <ModulesSection />
       <AcademicDatesSection />
+      <RemindersSection />
       <DataSection />
     </section>
   )

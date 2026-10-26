@@ -1,6 +1,6 @@
 # Student Productivity
 
-A local-first, mobile-first student productivity PWA with semester, module, academic-date, and timetable-rule management. Recurrence matching is provided as pure logic. Manual attendance is recorded on demand. A persistent work timer is available on Today. No backend, authentication, remote data, seed records, or push notifications.
+A local-first, mobile-first student productivity PWA with semester, module, academic-date, and timetable-rule management. Recurrence matching is provided as pure logic. Manual attendance is recorded on demand. A persistent work timer is available on Today. The core app needs no backend or account. Optional attendance reminders use small Vercel functions and Upstash; attendance and work history stay local. No seed records are included.
 
 ## Development
 
@@ -18,7 +18,7 @@ Development serves source code; use the production preview to check service-work
 
 ## Deploy to Vercel
 
-This is a static Vite app. No server, environment variables, database credentials, or Vercel runtime packages are required. `vercel.json` selects Vite, runs `npm ci` and `npm run build`, serves `dist`, and rewrites extensionless SPA routes to `/index.html`. Requests for assets, the manifest, and service-worker scripts retain their real paths ([Vercel Vite guide](https://vercel.com/docs/frameworks/frontend/vite)). `package.json` selects Node 24.x for builds ([Node version configuration](https://vercel.com/docs/functions/runtimes/node-js/node-js-versions)).
+The core is a static Vite app and works without server configuration. Optional attendance reminders add small Vercel functions and require the server-only variables described in [the reminder setup guide](docs/attendance-reminders.md). `vercel.json` selects Vite, runs `npm ci` and `npm run build`, serves `dist`, and rewrites extensionless SPA routes to `/index.html`. Requests for assets, the manifest, and service-worker scripts retain their real paths ([Vercel Vite guide](https://vercel.com/docs/frameworks/frontend/vite)). `package.json` selects Node 24.x for builds ([Node version configuration](https://vercel.com/docs/functions/runtimes/node-js/node-js-versions)).
 
 ### 1. Push to GitHub
 
@@ -51,7 +51,7 @@ The checked-in configuration supplies these values. If the dashboard asks for se
 | Build Command | `npm run build` |
 | Output Directory | `dist` |
 | Node.js Version | `24.x` |
-| Environment Variables | None |
+| Environment Variables | None for the core app; see the reminder guide to enable Web Push |
 
 Choose Deploy and wait for Ready. Open the resulting production HTTPS URL and directly load/refresh each path: `/`, `/sessions`, `/schedule`, `/insights`, `/settings`. Each should render its page rather than a 404. Use a fresh browser/private tab for this hosted check so an existing service worker does not hide server routing problems. The generated `dist` includes `index.html`, hashed JS/CSS assets, icons, `manifest.webmanifest`, and service-worker files. Do not upload `node_modules` or commit `dist`.
 
@@ -109,13 +109,13 @@ IndexedDB stays in the browser on the device. Clearing site data removes it. Loc
 
 Routes: `/`, `/sessions`, `/schedule`, `/insights`, `/settings`. Settings is reached from the header; the other four routes share the bottom navigation. The 28rem shell fills the dynamic viewport. Its header and bottom navigation reserve their own space around a scrolling main region; bottom padding keeps the last row reachable above navigation. Header/navigation include top, bottom, left, and right safe-area padding, alongside `viewport-fit=cover` ([WebKit guidance](https://webkit.org/blog/7929/designing-websites-for-iphone-x/)).
 
-The production service worker precaches the application shell, every lazy route chunk, styles, and icons, then falls back to index.html for navigation. All routes can reopen offline after the first successful load and service-worker activation. IndexedDB needs no network. Pages are split into smaller production bundles.
+The custom push-capable production service worker precaches the application shell, every lazy route chunk, styles, and icons, then falls back to index.html for navigation. All routes can reopen offline after the first successful load and service-worker activation. IndexedDB needs no network. Pages are split into smaller production bundles.
 
-Updates follow the [Vite PWA prompt strategy](https://vite-pwa-org.netlify.app/guide/prompt-for-update.html). A ready update offers Reload or Later, allowing open forms to remain intact until an explicit reload. Returning to the foreground or going online checks for updates at most once per minute. Offline update-check failures retain the cached app. No notifications are requested or implemented.
+Updates follow the [Vite PWA prompt strategy](https://vite-pwa-org.netlify.app/guide/prompt-for-update.html). A ready update offers Reload or Later, allowing open forms to remain intact until an explicit reload. Returning to the foreground or going online checks for updates at most once per minute. Offline update-check failures retain the cached app. Notification permission is requested only when you explicitly enable Attendance reminders in Settings; see [setup and limitations](docs/attendance-reminders.md).
 
 Inputs and selection controls use 16px text; primary buttons, navigation, and select options have comfortable tap targets. Long selected module names wrap. Date popovers fit a 320px screen; native time inputs retain their iOS picker. Drawers use dynamic viewport bounds, scrollable forms, and a safe-area footer. Dialogs also follow the [Visual Viewport](https://developer.mozilla.org/en-US/docs/Web/API/VisualViewport) to stay scrollable above the software keyboard.
 
-`vercel.json` rewrites extensionless SPA routes to index.html while preserving static asset requests. No deployment was performed.
+`vercel.json` rewrites extensionless SPA routes to index.html while preserving static assets and `/api/` function requests. No deployment was performed.
 
 The latest Vite React TypeScript starter uses Oxlint; `npm run lint` retains that current starter tool rather than introducing ESLint. Tailwind uses its current Vite plugin; shadcn is manually configured following the [official Vite setup](https://ui.shadcn.com/docs/installation/vite) using the installed UI components.
 
@@ -224,3 +224,11 @@ The full suite now has 130 cases (three DST-specific tests run in America/New_Yo
 Lint, TypeScript, production build, and the full unit suite pass without build/lint warnings. Production browser checks use an isolated database: install/control the worker online, close the page, go offline, and reopen an unvisited Settings route. All five pages and the academic calendar load offline at 320px, 375px, and 430px widths with long module names and no horizontal page overflow. Navigation stays separate from content and the final history row remains fully reachable. Manual session writes and a work timer survive offline reloads.
 
 A reduced-height 320px viewport checks scrolling Dialogs/Drawers, reachable actions, 16px text, long module selection, and calendar popover fit. A simulated second production build verifies that an open form retains its unsaved title, Later defers activation, and Reload explicitly activates the waiting worker. No browser runtime/console errors were observed. These are Chromium mobile checks; actual iPhone Safari keyboard behavior, Home Screen installation, and physical notch/home-indicator insets still require device verification.
+
+## Attendance reminders / Web Push
+
+Settings → Attendance reminders offers explicit opt-in, a fixed timetable IANA timezone, test push, sync, and disable/delete controls. iPhone requires the Home Screen app and iOS 16.4+. Reminders upload only push subscription details and minimal lecture/lab timing/labels; attendance and work sessions remain in IndexedDB. The active semester's reminder rules sync after local edits, backup imports, and foreground/online return. Offline edits/deletion remain pending until the app reconnects.
+
+The approved minimal architecture is Vercel Functions + Upstash Redis + one QStash five-minute schedule. No Vercel Hobby cron or phone background timer is used. Notifications open `/attendance?rule=…&date=YYYY-MM-DD`, preserving the original class date and timetable timezone. Existing local attendance can be changed. The server cannot suppress already-recorded attendance because it never receives that data.
+
+**Owner setup is required before live delivery:** follow [the full architecture, privacy, free-tier, deployment, and iPhone verification guide](docs/attendance-reminders.md), with [.env.example](.env.example) as the secret-variable checklist. No credentials are bundled, generated into the repository, or needed to keep using the core app. The existing theme is unchanged.

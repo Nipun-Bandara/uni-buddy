@@ -9,6 +9,7 @@ export const router = createBrowserRouter([{
     { path: '/sessions', lazy: async () => ({ Component: (await import('@/pages/sessions-page')).SessionsPage }) },
     { path: '/schedule', lazy: async () => ({ Component: (await import('@/pages/schedule-page')).SchedulePage }) },
     { path: '/insights', lazy: async () => ({ Component: (await import('@/pages/insights-page')).InsightsPage }) },
+    { path: '/attendance', lazy: async () => ({ Component: (await import('@/pages/attendance-page')).AttendancePage }) },
     { path: '/settings', lazy: async () => ({ Component: (await import('@/pages/settings-page')).SettingsPage }) },
   ],
 }])
