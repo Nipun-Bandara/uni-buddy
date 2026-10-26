@@ -1,3 +1,4 @@
+import { workCategorySchema } from '@/lib/work-categories'
 import { z } from 'zod'
 import type { SettingValue } from '@/db/types'
 import { calendarDateSchema, isoTimestampSchema, localTimeSchema } from '@/lib/dates'
@@ -25,7 +26,7 @@ const occurrence = z.strictObject({
   id, scheduleRuleId: id, date: calendarDateSchema, startAt: timestamp, endAt: timestamp,
   status: z.enum(['pending', 'attended', 'missed', 'cancelled']),
 }).refine(orderedTimestamps, 'Occurrence end must be after start.')
-const session = z.strictObject({ id, moduleId: id.optional(), title: z.string().optional(), startedAt: timestamp, endedAt: timestamp.optional() })
+const session = z.strictObject({ id, moduleId: id.optional(), category: workCategorySchema.optional(), title: z.string().optional(), startedAt: timestamp, endedAt: timestamp.optional() })
   .refine(value => value.endedAt === undefined || Date.parse(value.endedAt) >= Date.parse(value.startedAt), 'Session end is before start.')
 const setting = z.strictObject({ key: id, value: settingValue })
 const academicDate = z.strictObject({
@@ -65,7 +66,10 @@ export const backupSchema = z.strictObject({
     if (occurrenceKeys.has(key)) issue(['classOccurrences', index], 'Duplicate timetable rule/date occurrence.')
     occurrenceKeys.add(key)
   })
-  data.workSessions.forEach((row, index) => { if (row.moduleId && !modules.has(row.moduleId)) issue(['workSessions', index, 'moduleId'], 'Referenced module is missing.') })
+  data.workSessions.forEach((row, index) => {
+    if (row.moduleId && !modules.has(row.moduleId)) issue(['workSessions', index, 'moduleId'], 'Referenced module is missing.')
+    if (row.moduleId && row.category) issue(['workSessions', index, 'category'], 'Choose a module or a work category.')
+  })
   if (data.workSessions.filter(row => row.endedAt === undefined).length > 1) issue(['workSessions'], 'More than one active work session.')
   data.academicDates.forEach((row, index) => { if (!semesters.has(row.semesterId)) issue(['academicDates', index, 'semesterId'], 'Referenced semester is missing.') })
 })

@@ -1,3 +1,4 @@
+import { workCategories, workSelectionValue, workSelectionFields } from '@/lib/work-categories'
 import { useRef, useState, type FormEvent } from 'react'
 import { format } from 'date-fns'
 import type { Module, WorkSession } from '@/db/types'
@@ -58,11 +59,11 @@ export function SessionEditor({ session, modules, onClose, onSaved, returnFocus 
     <DrawerContent className="mx-auto w-full max-w-md" onCloseAutoFocus={event => { event.preventDefault(); returnFocus() }}>
       <DrawerHeader><DrawerTitle>{session ? 'Edit session' : 'Add session'}</DrawerTitle><DrawerDescription>Correct a completed work session. Use the end date for overnight work.</DrawerDescription></DrawerHeader>
       <form id="session-editor" ref={form} onSubmit={save} noValidate aria-busy={busy} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 pb-4" data-vaul-no-drag>
-        <div className="space-y-2"><label htmlFor="session-module" className="text-sm font-medium">Module (optional)</label>
-          <Select value={fields.moduleId || 'general'} onValueChange={value => change('moduleId', value === 'general' ? '' : value)} disabled={busy}>
-            <SelectTrigger id="session-module" className="min-h-11 w-full"><SelectValue /></SelectTrigger>
-            <SelectContent><SelectItem value="general">General / no module</SelectItem>{modules.map(module => <SelectItem key={module.id} value={module.id}>{module.code ? `${module.code} · ` : ''}{module.name}</SelectItem>)}</SelectContent>
-          </Select>
+        <div className="space-y-2"><label htmlFor="session-module" className="text-sm font-medium">Work type or module</label>
+          <Select value={workSelectionValue(fields)} onValueChange={value => setFields(previous => ({ ...previous, ...workSelectionFields(value) }))} disabled={busy}>
+            <SelectTrigger id="session-module" name="moduleId" className="min-h-11 w-full"><SelectValue /></SelectTrigger>
+            <SelectContent><SelectItem value="general">General / no module</SelectItem>{workCategories.map(item => <SelectItem key={item.value} value={`category:${item.value}`}>{item.label}</SelectItem>)}{modules.map(module => <SelectItem key={module.id} value={`module:${module.id}`}>{module.code ? `${module.code} · ` : ''}{module.name}</SelectItem>)}</SelectContent>
+          </Select>{error('category')}
         </div>
         <div className="space-y-2"><label htmlFor="session-title" className="text-sm font-medium">Title (optional)</label><Input id="session-title" name="title" value={fields.title} onChange={event => change('title', event.target.value)} className="min-h-11 text-base" disabled={busy} /></div>
         {(['date', 'startTime', 'endDate', 'endTime'] as const).map(key => <div key={key} className="space-y-2">

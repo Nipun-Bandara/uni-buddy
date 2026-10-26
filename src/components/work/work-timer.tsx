@@ -1,3 +1,4 @@
+import { workCategories, workSessionLabel, workSelectionFields } from '@/lib/work-categories'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Play, Square } from 'lucide-react'
@@ -47,7 +48,7 @@ export function WorkTimer() {
     if (pending.current) return
     pending.current = true; setBusy(true); setFailure('')
     try {
-      await startWorkSession({ moduleId: moduleId === 'general' ? undefined : moduleId, title })
+      await startWorkSession({ ...workSelectionFields(moduleId), title })
       setOpen(false); setStatus('Work session started.')
     } catch (error) {
       if (error instanceof ActiveWorkSessionError) {
@@ -72,7 +73,7 @@ export function WorkTimer() {
       <p className="mb-2 text-xs font-medium text-muted-foreground">Working now</p>
       <div className="flex items-center gap-2">
         {result.activeModule?.color && <span aria-hidden="true" className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: result.activeModule.color }} />}
-        <h3 className="min-w-0 break-words font-semibold">{result.activeModule?.name ?? 'General'}</h3>
+        <h3 className="min-w-0 break-words font-semibold">{workSessionLabel(result.active, result.activeModule)}</h3>
       </div>
       {result.active.title && <p className="break-words text-sm text-muted-foreground">{result.active.title}</p>}
       <p className="py-3 text-sm text-muted-foreground">Started <time dateTime={result.active.startedAt}>{format(new Date(result.active.startedAt), 'd MMM yyyy, p')}</time></p>
@@ -82,12 +83,12 @@ export function WorkTimer() {
     <span role="status" className="sr-only">{status}</span>
     <Drawer open={open} onOpenChange={next => { if (!pending.current) setOpen(next) }} dismissible={!busy}>
       <DrawerContent className="mx-auto w-full max-w-md" onCloseAutoFocus={event => { event.preventDefault(); (stopButton.current ?? startButton.current)?.focus() }}>
-        <DrawerHeader><DrawerTitle>Start work</DrawerTitle><DrawerDescription>Choose a module or work on something general. A title is optional.</DrawerDescription></DrawerHeader>
+        <DrawerHeader><DrawerTitle>Start work</DrawerTitle><DrawerDescription>Choose a work type or module. A title is optional.</DrawerDescription></DrawerHeader>
         <form id="start-work-form" onSubmit={start} className="min-h-0 space-y-5 overflow-y-auto px-4 pb-4" aria-busy={busy} data-vaul-no-drag>
-          <div className="space-y-2"><label htmlFor="work-module" className="text-sm font-medium">Module (optional)</label>
+          <div className="space-y-2"><label htmlFor="work-module" className="text-sm font-medium">Work type or module</label>
             <Select value={moduleId} onValueChange={setModuleId} disabled={busy}>
               <SelectTrigger id="work-module" className="min-h-11 w-full"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="general">General / no module</SelectItem>{result?.modules.map(module => <SelectItem key={module.id} value={module.id}>{module.code ? `${module.code} · ` : ''}{module.name}</SelectItem>)}</SelectContent>
+              <SelectContent><SelectItem value="general">General / no module</SelectItem>{workCategories.map(item => <SelectItem key={item.value} value={`category:${item.value}`}>{item.label}</SelectItem>)}{result?.modules.map(module => <SelectItem key={module.id} value={`module:${module.id}`}>{module.code ? `${module.code} · ` : ''}{module.name}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div className="space-y-2"><label htmlFor="work-title" className="text-sm font-medium">Title (optional)</label><Input id="work-title" className="min-h-11 text-base" placeholder="e.g. Literature review" value={title} onChange={event => setTitle(event.target.value)} disabled={busy} /></div>

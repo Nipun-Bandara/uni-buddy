@@ -53,8 +53,12 @@ function InsightsContent({ period }: { period: InsightsPeriod }) {
     <section aria-labelledby={`general-insights-${period}`} className="border-t pt-4">
       <h2 id={`general-insights-${period}`} className="text-lg font-semibold">General</h2>
       <p className="mt-1 text-xl font-medium tabular-nums">{formatInsightsDuration(totals.generalMs)}</p>
-      <p className="mt-1 text-xs text-muted-foreground">Completed work without a module.</p>
+      <p className="mt-1 text-xs text-muted-foreground">Completed work without a module or work category.</p>
     </section>
+    {totals.categoryBreakdown.map(item => <section key={item.value} aria-label={`${item.label} work`} className="border-t pt-4">
+      <h2 className="text-lg font-semibold">{item.label}</h2>
+      <p className="mt-1 text-xl font-medium tabular-nums">{formatInsightsDuration(item.durationMs)}</p>
+    </section>)}
     <p className="text-xs leading-5 text-muted-foreground">Weeks run Monday–Sunday in your device's timezone. Work crossing a boundary contributes only time within this period. Durations are calculated from saved timestamps; no records are generated for insights.</p>
   </div>
 }

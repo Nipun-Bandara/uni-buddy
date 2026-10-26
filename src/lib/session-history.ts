@@ -1,10 +1,12 @@
 import { format, subDays } from 'date-fns'
 import { z } from 'zod'
+import { workCategorySchema } from '@/lib/work-categories'
 import { getElapsedSeconds } from '@/lib/work-duration'
 import type { WorkSession } from '@/db/types'
 import { calendarDateSchema, localDateTimeToIso, parseCalendarDate, toCalendarDate } from '@/lib/dates'
 
 const formFields = z.object({
+  category: workCategorySchema.optional(),
   moduleId: z.string().trim(), title: z.string().trim(),
   date: calendarDateSchema, endDate: calendarDateSchema,
   startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/, 'Choose a valid start time.'),
@@ -23,6 +25,7 @@ function timestamp(date: string, time: string, original?: string) {
 /** Preserve fractional seconds and ambiguous-DST instants when their local fields are unchanged. */
 export function completedSessionSchema(existing?: WorkSession) {
   return formFields.superRefine((value, ctx) => {
+    if (value.moduleId && value.category) ctx.addIssue({ code: 'custom', path: ['category'], message: 'Choose a module or a work category.' })
     for (const [dateKey, timeKey, original] of [
       ['date', 'startTime', existing?.startedAt], ['endDate', 'endTime', existing?.endedAt],
     ] as const) {
@@ -32,6 +35,7 @@ export function completedSessionSchema(existing?: WorkSession) {
     }
   }).transform(value => ({
     moduleId: value.moduleId || undefined,
+    category: value.category,
     title: value.title || undefined,
     startedAt: timestamp(value.date, value.startTime, existing?.startedAt),
     endedAt: timestamp(value.endDate, value.endTime, existing?.endedAt),
@@ -44,7 +48,7 @@ export function completedSessionSchema(existing?: WorkSession) {
 export function sessionFormValues(session: WorkSession): SessionFormValues {
   const start = new Date(session.startedAt)
   const end = new Date(session.endedAt ?? session.startedAt)
-  return { moduleId: session.moduleId ?? '', title: session.title ?? '', date: toCalendarDate(start), endDate: toCalendarDate(end), startTime: format(start, 'HH:mm:ss'), endTime: format(end, 'HH:mm:ss') }
+  return { category: session.category, moduleId: session.moduleId ?? '', title: session.title ?? '', date: toCalendarDate(start), endDate: toCalendarDate(end), startTime: format(start, 'HH:mm:ss'), endTime: format(end, 'HH:mm:ss') }
 }
 
 /** Group completed sessions by local start date, newest days and starts first; never mutate input. */

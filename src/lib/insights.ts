@@ -1,3 +1,4 @@
+import { workCategories } from '@/lib/work-categories'
 import { addMonths, addWeeks, startOfMonth, startOfWeek } from 'date-fns'
 import type { ClassOccurrence, Module, ScheduleRule, WorkSession } from '@/db/types'
 import { toCalendarDate } from '@/lib/dates'
@@ -35,6 +36,7 @@ export function calculateInsights(data: InsightsData, period: InsightsPeriod, no
   const until = Math.min(end.getTime(), now.getTime())
   const modules = new Map(data.modules.map(module => [module.id, module]))
   const rules = new Map(data.rules.map(rule => [rule.id, rule]))
+  const categories = new Map<string, number>()
   const breakdown = new Map<string | null, ModuleInsights>()
   let attended = 0, missed = 0, cancelled = 0, classMs = 0, independentMs = 0, generalMs = 0
 
@@ -67,6 +69,7 @@ export function calculateInsights(data: InsightsData, period: InsightsPeriod, no
     if (!duration) continue
     independentMs += duration
     if (session.moduleId) moduleRow(session.moduleId).independentMs += duration
+    else if (session.category) categories.set(session.category, (categories.get(session.category) ?? 0) + duration)
     else generalMs += duration
   }
   const moduleBreakdown = [...breakdown.values()].map(row => ({ ...row, totalMs: row.classMs + row.independentMs }))
@@ -75,6 +78,7 @@ export function calculateInsights(data: InsightsData, period: InsightsPeriod, no
   return {
     start, end, attended, missed, cancelled, countedClasses,
     attendancePercent: countedClasses ? Math.round(attended / countedClasses * 100) : null,
+    categoryBreakdown: workCategories.filter(item => categories.has(item.value)).map(item => ({ ...item, durationMs: categories.get(item.value)! })),
     classMs, independentMs, generalMs, productiveMs: classMs + independentMs, moduleBreakdown,
     hasData: classMs + independentMs > 0 || countedClasses > 0,
   }

@@ -1,12 +1,14 @@
 import { z } from 'zod'
+import { workCategorySchema } from '@/lib/work-categories'
 import { db } from '@/db/db'
 import type { WorkSession } from '@/db/types'
 import { createId } from '@/lib/ids'
 
 const startSessionSchema = z.object({
   moduleId: z.string().trim().optional().transform(value => value || undefined),
+  category: workCategorySchema.optional(),
   title: z.string().trim().optional().transform(value => value || undefined),
-})
+}).refine(value => !value.moduleId || !value.category, 'Choose a module or a work category.')
 
 export class ActiveWorkSessionError extends Error {
   constructor() { super('A work session is already active.'); this.name = 'ActiveWorkSessionError' }
@@ -18,7 +20,7 @@ export function getActiveWorkSession(): Promise<WorkSession | undefined> {
 }
 
 /** The write transaction serializes active checks and inserts, including across tabs. */
-export async function startWorkSession(input: { moduleId?: string; title?: string } = {}): Promise<WorkSession> {
+export async function startWorkSession(input: { moduleId?: string; category?: WorkSession['category']; title?: string } = {}): Promise<WorkSession> {
   const fields = startSessionSchema.parse(input)
   return db.transaction('rw', db.workSessions, db.modules, db.semesters, async () => {
     if (await getActiveWorkSession()) throw new ActiveWorkSessionError()

@@ -39,9 +39,12 @@ export interface ClassOccurrence {
   endAt: string
   status: AttendanceStatus
 }
+export type WorkCategory = 'competitions' | 'project-development' | 'university-work'
 export interface WorkSession {
   id: string
   moduleId?: string
+  /** Standalone work category; absent for General and module sessions. */
+  category?: WorkCategory
   title?: string
   startedAt: string
   /** Absent while the session is active. Missing values are not indexed by IndexedDB. */

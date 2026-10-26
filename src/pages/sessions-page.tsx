@@ -1,3 +1,4 @@
+import { workSessionLabel } from '@/lib/work-categories'
 import { useEffect, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { format } from 'date-fns'
@@ -41,10 +42,10 @@ export function SessionsPage() {
           const startedAt = new Date(session.startedAt)
           const endedAt = new Date(session.endedAt!)
           const endDate = toCalendarDate(endedAt)
-          return <li key={session.id}><button type="button" aria-label={`Edit ${session.title || module?.name || 'General'}, ${format(startedAt, 'd MMM yyyy h:mm a')}`} onClick={() => setEditor({ session })} className="flex min-h-20 w-full items-center gap-3 rounded-md px-1 py-4 text-left hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring">
+          return <li key={session.id}><button type="button" aria-label={`Edit ${session.title || workSessionLabel(session, module)}, ${format(startedAt, 'd MMM yyyy h:mm a')}`} onClick={() => setEditor({ session })} className="flex min-h-20 w-full items-center gap-3 rounded-md px-1 py-4 text-left hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring">
             <span aria-hidden="true" className="size-2.5 shrink-0 rounded-full border border-foreground/20 bg-muted" style={module?.color ? { backgroundColor: module.color } : undefined} />
             <span className="min-w-0 flex-1 space-y-1">
-              <span className="block break-words font-medium">{module?.name ?? 'General'}</span>
+              <span className="block break-words font-medium">{workSessionLabel(session, module)}</span>
               {session.title && <span className="block break-words text-sm">{session.title}</span>}
               <span className="block text-sm font-medium">{sessionDurationLabel(session)}</span>
               <span className="block text-sm text-muted-foreground"><time dateTime={session.startedAt}>{format(startedAt, 'h:mm a')}</time> – <time dateTime={session.endedAt}>{endDate !== group.date ? `${format(endedAt, 'd MMM yyyy')} · ` : ''}{format(endedAt, 'h:mm a')}</time></span>
