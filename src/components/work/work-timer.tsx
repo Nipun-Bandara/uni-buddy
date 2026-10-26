@@ -3,20 +3,14 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { Play, Square } from 'lucide-react'
 import { db } from '@/db/db'
 import { ActiveWorkSessionError, getActiveWorkSession, startWorkSession, stopWorkSession } from '@/db/work-sessions'
-import { useSessionElapsed } from '@/hooks/use-session-elapsed'
-import { formatWorkDuration } from '@/lib/work-duration'
+import { format } from 'date-fns'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter } from '@/components/ui/drawer'
 
-function ElapsedTime({ startedAt }: { startedAt: string }) {
-  const elapsed = useSessionElapsed(startedAt)
-  return <p role="timer" aria-label="Elapsed work time" aria-live="off" className="py-3 text-4xl font-semibold tabular-nums tracking-tight">{formatWorkDuration(elapsed)}</p>
-}
-
-/** Local, reusable start/active-session UI; no global state or stored counter. */
+/** Records start/end timestamps without a ticking counter or background session loop. */
 export function WorkTimer() {
   const result = useLiveQuery(async () => {
     try {
@@ -67,7 +61,7 @@ export function WorkTimer() {
     try {
       await stopWorkSession(result.active.id)
       focusAfterStop.current = true
-      setStatus('Work session stopped and saved.')
+      setStatus('Work session ended and saved.')
     } catch { setFailure('Could not stop the session. Check your device time and try again.') }
     finally { pending.current = false; setBusy(false) }
   }
@@ -81,8 +75,8 @@ export function WorkTimer() {
         <h3 className="min-w-0 break-words font-semibold">{result.activeModule?.name ?? 'General'}</h3>
       </div>
       {result.active.title && <p className="break-words text-sm text-muted-foreground">{result.active.title}</p>}
-      <ElapsedTime key={result.active.id} startedAt={result.active.startedAt} />
-      <Button ref={stopButton} className="min-h-12 w-full" disabled={busy} onClick={() => { void stop() }}><Square aria-hidden="true" />{busy ? 'Stopping…' : 'Stop'}</Button>
+      <p className="py-3 text-sm text-muted-foreground">Started <time dateTime={result.active.startedAt}>{format(new Date(result.active.startedAt), 'd MMM yyyy, p')}</time></p>
+      <Button ref={stopButton} className="min-h-12 w-full" disabled={busy} onClick={() => { void stop() }}><Square aria-hidden="true" />{busy ? 'Ending…' : 'End session'}</Button>
     </Card> : <Button ref={startButton} className="min-h-12 w-full text-base" disabled={busy} onClick={begin}><Play aria-hidden="true" />Start work</Button>}
     {failure && !open && <p role="alert" className="text-sm text-destructive">{failure}</p>}
     <span role="status" className="sr-only">{status}</span>

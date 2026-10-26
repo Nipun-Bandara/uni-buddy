@@ -59,8 +59,9 @@ describe('work sessions', () => {
   })
 
   it('stops at the current timestamp and permits a new session', async () => {
+    await seedModule()
     vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(start))
-    const first = await startWorkSession()
+    const first = await startWorkSession({ moduleId: 'm', title: 'First session' })
     vi.setSystemTime(new Date('2026-10-29T05:53:42.000Z'))
     const stopped = await stopWorkSession(first.id)
     expect(stopped.endedAt).toBe('2026-10-29T05:53:42.000Z')
@@ -68,6 +69,9 @@ describe('work sessions', () => {
     expect(await getActiveWorkSession()).toBeUndefined()
     const next = await startWorkSession()
     expect(next.id).not.toBe(first.id)
+    expect(next.startedAt).toBe(stopped.endedAt)
+    expect(next.moduleId).toBeUndefined()
+    expect(next.title).toBeUndefined()
     expect(await db.workSessions.count()).toBe(2)
   })
 
