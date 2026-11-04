@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Check, Pencil, X, Minus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import type { AttendanceStatus, ClassOccurrence, ScheduleRule } from '@/db/types'
+import type { AttendanceStatus, ClassOccurrence, RescheduledClass, ScheduleRule } from '@/db/types'
+import { setRescheduledAttendance } from '@/db/rescheduled-classes'
 import { setAttendance } from '@/db/attendance'
 import { cn } from '@/lib/utils'
 
@@ -11,16 +12,19 @@ const statuses = [
   { value: 'cancelled', label: 'Cancelled', icon: Minus },
 ] as const
 
-export function AttendanceControls({ rule, date, occurrence, ended, label }: {
-  rule: ScheduleRule; date: string; occurrence?: ClassOccurrence; ended: boolean; label: string
-}) {
+type AttendanceControlsProps = { ended: boolean; label: string } & (
+  { rule: ScheduleRule; date: string; occurrence?: ClassOccurrence; rescheduledClass?: never } |
+  { rescheduledClass: RescheduledClass; rule?: never; date?: never; occurrence?: never }
+)
+export function AttendanceControls(props: AttendanceControlsProps) {
+  const { ended, label } = props
   const [editing, setEditing] = useState(false)
   const [busy, setBusy] = useState(false)
   const [failure, setFailure] = useState('')
   const [message, setMessage] = useState('')
   const pending = useRef(false)
   const trigger = useRef<HTMLButtonElement>(null)
-  const status = occurrence?.status ?? 'pending'
+  const status = props.rescheduledClass?.status ?? props.occurrence?.status ?? 'pending'
   const recorded = status !== 'pending'
   const restoreFocus = useRef(false)
   useEffect(() => {
@@ -35,7 +39,8 @@ export function AttendanceControls({ rule, date, occurrence, ended, label }: {
     if (pending.current) return
     pending.current = true; setBusy(true); setFailure('')
     try {
-      await setAttendance(rule, date, next)
+      if (props.rescheduledClass) await setRescheduledAttendance(props.rescheduledClass.id, next)
+      else await setAttendance(props.rule, props.date, next)
       restoreFocus.current = true
       setEditing(false)
       setMessage(`Attendance saved: ${statuses.find(item => item.value === next)?.label ?? next}.`)

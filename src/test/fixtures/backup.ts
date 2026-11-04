@@ -3,6 +3,7 @@ import type { Backup } from '@/lib/backup'
 export function backupFixture(): Backup {
   return {
     version: 1, exportedAt: '2026-10-29T10:00:00.000Z', data: {
+      rescheduledClasses: [],
       semesters: [{ id: 's', name: 'Semester 7', startDate: '2026-10-01', endDate: '2027-02-28' }],
       modules: [{ id: 'm', semesterId: 's', code: 'IT4010', name: 'Data Mining', color: '#3b82f6' }],
       scheduleRules: [{ id: 'r', moduleId: 'm', type: 'lecture', dayOfWeek: 3, startTime: '10:00', endTime: '12:00', repeatEveryWeeks: 1, anchorDate: '2026-10-29', startDate: '2026-10-01', endDate: '2027-02-28', location: 'Hall 2' }],

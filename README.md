@@ -93,7 +93,7 @@ PWA theme/background colors are independent browser metadata: update them in `vi
 
 ## Local data conventions
 
-One Dexie instance opens `StudentProductivityDB`, schema version 5, before rendering. Tables: semesters, modules, scheduleRules, classOccurrences, workSessions, settings, academicDates. Records start empty. Forms use Zod validation and reference guards protect related records during deletion. Dexie live queries keep lists current.
+One Dexie instance opens `StudentProductivityDB`, schema version 6, before rendering. Tables: semesters, modules, scheduleRules, classOccurrences, workSessions, settings, academicDates, rescheduledClasses. Records start empty. Forms use Zod validation and reference guards protect related records during deletion. Dexie live queries keep lists current.
 
 - Calendar dates: `YYYY-MM-DD`, interpreted locally; never parse with `new Date(dateString)` or serialize date-only values to UTC.
 - Local times: `HH:mm`, 24-hour clock.
@@ -228,3 +228,11 @@ A reduced-height 320px viewport checks scrolling Dialogs/Drawers, reachable acti
 ## Work categories
 
 Start work and the manual/edit session picker include General, Competitions, Project developments, University work, and university modules. Category sessions can have an optional title and need no semester/module. The optional category field persists with each session, appears in history and Insights, and is included in validated backups. Older sessions/backups without a category remain General or their assigned module. No IndexedDB index migration is needed.
+
+## Rescheduled classes and historical Insights
+
+Today → Add rescheduled class creates one dated class for the current local date, with a module, type, start/end times, and optional location. It is stored in the separate `rescheduledClasses` table (additive IndexedDB version 6), never in weekly `scheduleRules`. The original cancelled class remains unchanged. One-offs are sorted with today's regular classes and identified as Rescheduled. After end time, the existing Attended/Missed/Cancelled controls appear; changing status updates the same one-off record. Editing preserves saved timestamps if the date/time fields are unchanged; deleting requires confirmation and removes its attendance. Related module/semester deletion is guarded.
+
+Insights supports any previous week/month: use the arrows, choose a date within that period using the calendar, or return to the current week/month. Week boundaries remain Monday–Sunday. The selected period is kept in the URL so reload/back navigation preserves it; future periods/dates are disabled. Historical totals use the selected period's boundaries, clipping completed work/class durations to those bounds and the actual current time. One-off attended class duration contributes to its module, attended/missed counts affect the attendance percentage, and cancelled/pending classes are excluded. Work categories and General remain separate.
+
+The Class attendance section lists saved recurring attendance and dated rescheduled classes for the selected period. This lets an unmarked one-off be recorded later, and past attendance be reviewed/changed. It does not generate historical occurrences for unrecorded recurring classes. One-offs can also be corrected/deleted there. All reads and writes remain local. Backups include one-offs; older v1 backups without that array restore it as empty. The theme and weekly timetable are unchanged.

@@ -92,17 +92,18 @@ export function SemesterSection() {
     setBusy(true)
     setFailure('')
     try {
-      const deleted = await db.transaction('rw', [db.semesters, db.academicDates, db.modules, db.scheduleRules, db.workSessions], async () => {
+      const deleted = await db.transaction('rw', [db.semesters, db.academicDates, db.modules, db.scheduleRules, db.workSessions, db.rescheduledClasses], async () => {
         const moduleIds = await db.modules.where('semesterId').equals(semester.id).primaryKeys()
         if (moduleIds.length && (await db.scheduleRules.where('moduleId').anyOf(moduleIds).count() ||
-            await db.workSessions.where('moduleId').anyOf(moduleIds).count())) return false
+            await db.workSessions.where('moduleId').anyOf(moduleIds).count() ||
+            await db.rescheduledClasses.where('moduleId').anyOf(moduleIds).count())) return false
         await db.modules.bulkDelete(moduleIds)
         await db.academicDates.where('semesterId').equals(semester.id).delete()
         await db.semesters.delete(semester.id)
         return true
       })
       if (!deleted) {
-        setFailure('This semester has modules with timetable rules or work sessions. Remove or reassign those records first.')
+        setFailure('This semester has modules with timetable rules, rescheduled classes, or work sessions. Remove or reassign those records first.')
         return
       }
       setConfirmOpen(false)

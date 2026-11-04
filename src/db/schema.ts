@@ -19,3 +19,6 @@ export const schemaV5 = {
   ...schemaV2,
   classOccurrences: 'id, scheduleRuleId, date, &[scheduleRuleId+date]',
 }
+
+/** Additive v6: no changes to existing rules, attendance or work sessions. */
+export const schemaV6 = { ...schemaV5, rescheduledClasses: 'id, moduleId, date' }

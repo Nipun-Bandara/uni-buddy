@@ -1,3 +1,4 @@
+import { rescheduledClassSchema } from '@/lib/rescheduled-classes'
 import { workCategorySchema } from '@/lib/work-categories'
 import { z } from 'zod'
 import type { SettingValue } from '@/db/types'
@@ -43,6 +44,7 @@ export const backupSchema = z.strictObject({
     classOccurrences: z.array(occurrence), workSessions: z.array(session), settings: z.array(setting),
     // Optional for six-table v1 backups; replacement restores missing academic dates as empty.
     academicDates: z.array(academicDate).default([]),
+    rescheduledClasses: z.array(rescheduledClassSchema).default([]),
   }),
 }).superRefine(({ data }, ctx) => {
   function issue(path: (string | number)[], message: string) { ctx.addIssue({ code: 'custom', path: ['data', ...path], message }) }
@@ -59,6 +61,7 @@ export const backupSchema = z.strictObject({
   const rules = new Set(data.scheduleRules.map(row => row.id))
   data.modules.forEach((row, index) => { if (!semesters.has(row.semesterId)) issue(['modules', index, 'semesterId'], 'Referenced semester is missing.') })
   data.scheduleRules.forEach((row, index) => { if (!modules.has(row.moduleId)) issue(['scheduleRules', index, 'moduleId'], 'Referenced module is missing.') })
+  data.rescheduledClasses.forEach((row, index) => { if (!modules.has(row.moduleId)) issue(['rescheduledClasses', index, 'moduleId'], 'Referenced module is missing.') })
   const occurrenceKeys = new Set<string>()
   data.classOccurrences.forEach((row, index) => {
     if (!rules.has(row.scheduleRuleId)) issue(['classOccurrences', index, 'scheduleRuleId'], 'Referenced timetable rule is missing.')

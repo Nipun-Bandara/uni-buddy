@@ -54,7 +54,7 @@ export function DataSection() {
   const totalRecords = pendingBackup ? Object.values(pendingBackup.backup.data).reduce((total, rows) => total + rows.length, 0) : 0
   return <section aria-labelledby="data-heading" className="mt-8 space-y-4">
     <h2 id="data-heading" className="border-b pb-3 text-lg font-semibold">Data</h2>
-    <p className="text-sm leading-6 text-muted-foreground">Save a local JSON copy of your data, including academic dates and any active work timer.</p>
+    <p className="text-sm leading-6 text-muted-foreground">Save a local JSON copy of your data, including academic dates, rescheduled classes, and any active work session.</p>
     <div className="flex flex-col gap-3">
       <Button variant="outline" className="min-h-11 justify-start" disabled={busy !== null} onClick={() => { void exportFile() }}><Download aria-hidden="true" />{busy === 'export' ? 'Exporting…' : 'Export backup'}</Button>
       <Button ref={importButton} variant="outline" className="min-h-11 justify-start" disabled={busy !== null} onClick={() => input.current?.click()}><Upload aria-hidden="true" />{busy === 'read' ? 'Checking backup…' : 'Import backup'}</Button>
@@ -66,7 +66,7 @@ export function DataSection() {
       <AlertDialogContent className="max-h-[85dvh] overflow-y-auto" onCloseAutoFocus={event => { event.preventDefault(); importButton.current?.focus() }}>
         <AlertDialogHeader>
           <AlertDialogTitle>Replace all local data?</AlertDialogTitle>
-          <AlertDialogDescription>This replaces your semesters, modules, timetable rules, attendance, work sessions, settings, and academic dates with the selected backup. Any active timer is replaced by the backup's timer state. Export your current data first if you want to keep it. This cannot be undone.</AlertDialogDescription>
+          <AlertDialogDescription>This replaces your semesters, modules, timetable rules, attendance, work sessions, settings, academic dates, and rescheduled classes with the selected backup. Any active timer is replaced by the backup's timer state. Export your current data first if you want to keep it. This cannot be undone.</AlertDialogDescription>
         </AlertDialogHeader>
         {pendingBackup && <div className="space-y-1 text-sm">
           <p className="break-words font-medium">{pendingBackup.filename}</p>

@@ -44,6 +44,6 @@ describe('backup persistence', () => {
     const value = backupFixture()
     const data = { semesters: [], modules: [], scheduleRules: [], classOccurrences: [], workSessions: [], settings: [] }
     await restoreBackup({ ...value, data })
-    expect((await createBackup()).data).toEqual({ ...data, academicDates: [] })
+    expect((await createBackup()).data).toEqual({ ...data, academicDates: [], rescheduledClasses: [] })
   })
 })

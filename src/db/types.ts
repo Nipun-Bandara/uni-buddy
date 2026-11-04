@@ -39,6 +39,19 @@ export interface ClassOccurrence {
   endAt: string
   status: AttendanceStatus
 }
+/** A one-off replacement class, stored separately from recurring timetable rules. */
+export interface RescheduledClass {
+  id: string
+  moduleId: string
+  type: ClassType
+  date: string
+  startTime: string
+  endTime: string
+  location?: string
+  startAt: string
+  endAt: string
+  status: AttendanceStatus
+}
 export type WorkCategory = 'competitions' | 'project-development' | 'university-work'
 export interface WorkSession {
   id: string

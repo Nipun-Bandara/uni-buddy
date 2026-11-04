@@ -16,9 +16,10 @@ type DatePickerProps = {
   invalid?: boolean
   describedBy?: string
   defaultDate?: string
+  maxDate?: string
 }
 
-export function DatePicker({ id, name, label, value, onChange, disabled, invalid, describedBy, defaultDate }: DatePickerProps) {
+export function DatePicker({ id, name, label, value, onChange, disabled, invalid, describedBy, defaultDate, maxDate }: DatePickerProps) {
   const [open, setOpen] = useState(false)
   const [today] = useState(() => new Date())
   return <Popover open={open} onOpenChange={setOpen}>
@@ -35,7 +36,7 @@ export function DatePicker({ id, name, label, value, onChange, disabled, invalid
         className="mx-auto"
         selected={value ? parseCalendarDate(value) : undefined}
         defaultMonth={value ? parseCalendarDate(value) : defaultDate ? parseCalendarDate(defaultDate) : today}
-        startMonth={new Date(1900, 0)} endMonth={new Date(2100, 11)} disabled={disabled}
+        startMonth={new Date(1900, 0)} endMonth={new Date(2100, 11)} disabled={disabled || (maxDate ? { after: parseCalendarDate(maxDate) } : undefined)}
         onSelect={date => { if (date) { onChange(toCalendarDate(date)); setOpen(false) } }} />
     </PopoverContent>
   </Popover>

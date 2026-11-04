@@ -83,7 +83,7 @@ export function ModulesSection() {
     setFailure('')
     try {
       if (!await deleteModule(editing.id)) {
-        setFailure('This module has timetable rules or work sessions. Remove or reassign those records before deleting it.')
+        setFailure('This module has timetable rules, rescheduled classes, or work sessions. Remove or reassign those records before deleting it.')
         return
       }
       setConfirmOpen(false)

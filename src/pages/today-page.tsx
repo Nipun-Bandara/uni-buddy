@@ -20,7 +20,7 @@ export function TodayPage() {
         <time dateTime={today} className="mt-1 block text-2xl font-semibold tracking-tight">{format(now, 'd MMMM')}</time>
       </header>
       <WorkTimer />
-      <TodayClasses date={today} localTime={toLocalTime(now)} />
+      <TodayClasses date={today} localTime={toLocalTime(now)} now={now} />
       <section aria-labelledby="upcoming-heading" className="mt-8 space-y-3">
         <div className="flex items-center justify-between gap-3">
           <h2 id="upcoming-heading" className="text-lg font-semibold">Current & upcoming</h2>

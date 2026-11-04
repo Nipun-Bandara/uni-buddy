@@ -1,10 +1,10 @@
 import { workCategories } from '@/lib/work-categories'
 import { addMonths, addWeeks, startOfMonth, startOfWeek } from 'date-fns'
-import type { ClassOccurrence, Module, ScheduleRule, WorkSession } from '@/db/types'
+import type { ClassOccurrence, Module, RescheduledClass, ScheduleRule, WorkSession } from '@/db/types'
 import { toCalendarDate } from '@/lib/dates'
 
 export type InsightsPeriod = 'week' | 'month'
-export type InsightsData = { sessions: WorkSession[]; occurrences: ClassOccurrence[]; rules: ScheduleRule[]; modules: Module[] }
+export type InsightsData = { sessions: WorkSession[]; occurrences: ClassOccurrence[]; rules: ScheduleRule[]; modules: Module[]; rescheduledClasses?: RescheduledClass[] }
 export type ModuleInsights = { moduleId: string | null; name: string; color?: string; classMs: number; independentMs: number; totalMs: number }
 
 /** Local calendar boundaries: Monday 00:00 → next Monday; month start → next month. */
@@ -28,8 +28,8 @@ function overlap(startedAt: string, endedAt: string, start: number, end: number)
  * Durations are clipped to the period and now; active sessions are excluded entirely.
  * Durations remain milliseconds until display, so fractional minutes are not lost per row.
  */
-export function calculateInsights(data: InsightsData, period: InsightsPeriod, now: Date) {
-  const { start, end } = getInsightsPeriod(period, now)
+export function calculateInsights(data: InsightsData, period: InsightsPeriod, now: Date, referenceDate: Date = now) {
+  const { start, end } = getInsightsPeriod(period, referenceDate)
   const firstDate = toCalendarDate(start)
   const endDate = toCalendarDate(end)
   const today = toCalendarDate(now)
@@ -50,7 +50,11 @@ export function calculateInsights(data: InsightsData, period: InsightsPeriod, no
     return row
   }
 
-  for (const occurrence of data.occurrences) {
+  const classRecords = [
+    ...data.occurrences.map(occurrence => ({ ...occurrence, moduleId: rules.get(occurrence.scheduleRuleId)?.moduleId ?? null })),
+    ...(data.rescheduledClasses ?? []).map(record => ({ ...record, moduleId: record.moduleId })),
+  ]
+  for (const occurrence of classRecords) {
     const inDateRange = occurrence.date >= firstDate && occurrence.date < endDate && occurrence.date <= today
     if (inDateRange) {
       if (occurrence.status === 'attended') attended++
@@ -61,7 +65,7 @@ export function calculateInsights(data: InsightsData, period: InsightsPeriod, no
     const duration = overlap(occurrence.startAt, occurrence.endAt, start.getTime(), until)
     if (!duration) continue
     classMs += duration
-    moduleRow(rules.get(occurrence.scheduleRuleId)?.moduleId ?? null).classMs += duration
+    moduleRow(occurrence.moduleId).classMs += duration
   }
   for (const session of data.sessions) {
     if (session.endedAt === undefined) continue
