@@ -4,11 +4,11 @@ import { validateBackup, type Backup } from '@/lib/backup'
 /** A consistent read snapshot, including an active timer and academic dates. */
 export async function createBackup(): Promise<Backup> {
   const snapshot = await db.transaction('r', db.tables, async () => {
-    const [semesters, modules, scheduleRules, classOccurrences, workSessions, settings, academicDates, rescheduledClasses] = await Promise.all([
+    const [semesters, modules, scheduleRules, classOccurrences, workSessions, settings, academicDates, rescheduledClasses, sleepSessions] = await Promise.all([
       db.semesters.toArray(), db.modules.toArray(), db.scheduleRules.toArray(), db.classOccurrences.toArray(),
-      db.workSessions.toArray(), db.settings.toArray(), db.academicDates.toArray(), db.rescheduledClasses.toArray(),
+      db.workSessions.toArray(), db.settings.toArray(), db.academicDates.toArray(), db.rescheduledClasses.toArray(), db.sleepSessions.toArray(),
     ])
-    return { version: 1, exportedAt: new Date().toISOString(), data: { semesters, modules, scheduleRules, classOccurrences, workSessions, settings, academicDates, rescheduledClasses } }
+    return { version: 1, exportedAt: new Date().toISOString(), data: { semesters, modules, scheduleRules, classOccurrences, workSessions, settings, academicDates, rescheduledClasses, sleepSessions } }
   })
   return validateBackup(snapshot)
 }
@@ -26,5 +26,6 @@ export async function restoreBackup(value: unknown) {
     await db.settings.bulkAdd(data.settings)
     await db.academicDates.bulkAdd(data.academicDates)
     await db.rescheduledClasses.bulkAdd(data.rescheduledClasses)
+    await db.sleepSessions.bulkAdd(data.sleepSessions)
   })
 }

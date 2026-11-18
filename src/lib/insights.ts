@@ -1,14 +1,15 @@
 import { workCategories } from '@/lib/work-categories'
-import { addMonths, addWeeks, startOfMonth, startOfWeek } from 'date-fns'
+import { addDays, addMonths, addWeeks, startOfDay, startOfMonth, startOfWeek } from 'date-fns'
 import type { ClassOccurrence, Module, RescheduledClass, ScheduleRule, WorkSession } from '@/db/types'
 import { toCalendarDate } from '@/lib/dates'
 
-export type InsightsPeriod = 'week' | 'month'
+export type InsightsPeriod = 'day' | 'week' | 'month'
 export type InsightsData = { sessions: WorkSession[]; occurrences: ClassOccurrence[]; rules: ScheduleRule[]; modules: Module[]; rescheduledClasses?: RescheduledClass[] }
 export type ModuleInsights = { moduleId: string | null; name: string; color?: string; classMs: number; independentMs: number; totalMs: number }
 
-/** Local calendar boundaries: Monday 00:00 → next Monday; month start → next month. */
+/** Local calendar boundaries: midnight → next midnight; Monday 00:00 → next Monday; month start → next month. */
 export function getInsightsPeriod(period: InsightsPeriod, now: Date) {
+  if (period === 'day') { const start = startOfDay(now); return { start, end: addDays(start, 1) } }
   const start = period === 'week' ? startOfWeek(now, { weekStartsOn: 1 }) : startOfMonth(now)
   const end = period === 'week' ? addWeeks(start, 1) : addMonths(start, 1)
   return { start, end }
@@ -30,6 +31,11 @@ function overlap(startedAt: string, endedAt: string, start: number, end: number)
  */
 export function calculateInsights(data: InsightsData, period: InsightsPeriod, now: Date, referenceDate: Date = now) {
   const { start, end } = getInsightsPeriod(period, referenceDate)
+  return calculateRangeInsights(data, start, end, now)
+}
+
+/** The same aggregation for any local-midnight-aligned [start, end) range. */
+export function calculateRangeInsights(data: InsightsData, start: Date, end: Date, now: Date) {
   const firstDate = toCalendarDate(start)
   const endDate = toCalendarDate(end)
   const today = toCalendarDate(now)

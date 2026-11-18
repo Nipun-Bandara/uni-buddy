@@ -4,11 +4,11 @@ import { calendarDateSchema, parseCalendarDate, toCalendarDate } from '@/lib/dat
 import type { AcademicDateType } from '@/db/types'
 
 export const academicDateLabels: Record<AcademicDateType, string> = {
-  break: 'Mid-semester break', holiday: 'Holiday weeks', 'exam-week': 'Exam weeks',
+  break: 'Mid-semester break', 'reading-week': 'Reading week', holiday: 'Holiday weeks', 'exam-week': 'Exam weeks',
   exam: 'Exam', assignment: 'Assignment',
 }
 export const academicDateSchema = z.object({
-  type: z.enum(['break', 'holiday', 'exam-week', 'exam', 'assignment']),
+  type: z.enum(['break', 'reading-week', 'holiday', 'exam-week', 'exam', 'assignment']),
   title: z.string().trim().min(1, 'Enter a title.'),
   startDate: calendarDateSchema,
   endDate: calendarDateSchema,
@@ -19,7 +19,7 @@ export const academicDateSchema = z.object({
 })
 
 export function isWeekType(type: AcademicDateType) {
-  return type === 'break' || type === 'holiday' || type === 'exam-week'
+  return type === 'break' || type === 'reading-week' || type === 'holiday' || type === 'exam-week'
 }
 
 /** Whole consecutive weeks starting on the selected date; end date is inclusive. */

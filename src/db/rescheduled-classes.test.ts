@@ -75,7 +75,7 @@ describe('one-off rescheduled classes', () => {
     old.version(5).stores(schemaV5)
     await old.open(); await old.table('settings').add({ key: 'kept', value: true }); old.close()
     const upgraded = new StudentProductivityDatabase(name)
-    try { await upgraded.open(); expect(upgraded.verno).toBe(6); expect((await upgraded.settings.get('kept'))?.value).toBe(true); expect(await upgraded.rescheduledClasses.count()).toBe(0) }
+    try { await upgraded.open(); expect(upgraded.verno).toBe(7); expect((await upgraded.settings.get('kept'))?.value).toBe(true); expect(await upgraded.rescheduledClasses.count()).toBe(0) }
     finally { await upgraded.delete() }
   })
 })

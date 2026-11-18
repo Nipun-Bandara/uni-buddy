@@ -1,7 +1,7 @@
 import { deduplicateOccurrences } from '@/db/occurrence-migration'
 import Dexie, { type EntityTable } from 'dexie'
-import { schemaV1, schemaV2, schemaV5, schemaV6 } from '@/db/schema'
-import type { AcademicDate, RescheduledClass, ClassOccurrence, Module, ScheduleRule, Semester, Setting, WorkSession } from '@/db/types'
+import { schemaV1, schemaV2, schemaV5, schemaV6, schemaV7 } from '@/db/schema'
+import type { AcademicDate, RescheduledClass, ClassOccurrence, Module, ScheduleRule, Semester, Setting, SleepSession, WorkSession } from '@/db/types'
 
 export class StudentProductivityDatabase extends Dexie {
   rescheduledClasses!: EntityTable<RescheduledClass, 'id'>
@@ -12,6 +12,7 @@ export class StudentProductivityDatabase extends Dexie {
   classOccurrences!: EntityTable<ClassOccurrence, 'id'>
   workSessions!: EntityTable<WorkSession, 'id'>
   settings!: EntityTable<Setting, 'key'>
+  sleepSessions!: EntityTable<SleepSession, 'id'>
 
   constructor(name = 'StudentProductivityDB') {
     super(name)
@@ -29,6 +30,7 @@ export class StudentProductivityDatabase extends Dexie {
     })
     this.version(5).stores(schemaV5)
     this.version(6).stores(schemaV6)
+    this.version(7).stores(schemaV7)
   }
 }
 

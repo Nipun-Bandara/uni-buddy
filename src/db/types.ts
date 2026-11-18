@@ -63,13 +63,20 @@ export interface WorkSession {
   /** Absent while the session is active. Missing values are not indexed by IndexedDB. */
   endedAt?: string
 }
+/** Sleep is recorded by bedtime/wake-up timestamps only; it counts toward its local wake-up date. */
+export interface SleepSession {
+  id: string
+  startedAt: string
+  /** Absent while asleep. */
+  endedAt?: string
+}
 export type SettingValue = null | boolean | number | string | SettingValue[] | { [key: string]: SettingValue }
 export interface Setting {
   key: string
   value: SettingValue
 }
 
-export type AcademicDateType = 'break' | 'holiday' | 'exam-week' | 'exam' | 'assignment'
+export type AcademicDateType = 'break' | 'reading-week' | 'holiday' | 'exam-week' | 'exam' | 'assignment'
 /** Inclusive date-only range. Exams and assignments have matching start/end dates. */
 export interface AcademicDate {
   id: string

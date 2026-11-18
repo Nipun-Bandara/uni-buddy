@@ -29,9 +29,11 @@ const occurrence = z.strictObject({
 }).refine(orderedTimestamps, 'Occurrence end must be after start.')
 const session = z.strictObject({ id, moduleId: id.optional(), category: workCategorySchema.optional(), title: z.string().optional(), startedAt: timestamp, endedAt: timestamp.optional() })
   .refine(value => value.endedAt === undefined || Date.parse(value.endedAt) >= Date.parse(value.startedAt), 'Session end is before start.')
+const sleepSession = z.strictObject({ id, startedAt: timestamp, endedAt: timestamp.optional() })
+  .refine(value => value.endedAt === undefined || Date.parse(value.endedAt) > Date.parse(value.startedAt), 'Sleep wake-up must be after bedtime.')
 const setting = z.strictObject({ key: id, value: settingValue })
 const academicDate = z.strictObject({
-  id, semesterId: id, type: z.enum(['break', 'holiday', 'exam-week', 'exam', 'assignment']), title: name,
+  id, semesterId: id, type: z.enum(['break', 'reading-week', 'holiday', 'exam-week', 'exam', 'assignment']), title: name,
   startDate: calendarDateSchema, endDate: calendarDateSchema,
 }).refine(dateRange, 'Academic end date is before start date.')
   .refine(value => !['exam', 'assignment'].includes(value.type) || value.startDate === value.endDate, 'Exams and assignments require a single date.')
@@ -45,6 +47,7 @@ export const backupSchema = z.strictObject({
     // Optional for six-table v1 backups; replacement restores missing academic dates as empty.
     academicDates: z.array(academicDate).default([]),
     rescheduledClasses: z.array(rescheduledClassSchema).default([]),
+    sleepSessions: z.array(sleepSession).default([]),
   }),
 }).superRefine(({ data }, ctx) => {
   function issue(path: (string | number)[], message: string) { ctx.addIssue({ code: 'custom', path: ['data', ...path], message }) }
@@ -74,6 +77,7 @@ export const backupSchema = z.strictObject({
     if (row.moduleId && row.category) issue(['workSessions', index, 'category'], 'Choose a module or a work category.')
   })
   if (data.workSessions.filter(row => row.endedAt === undefined).length > 1) issue(['workSessions'], 'More than one active work session.')
+  if (data.sleepSessions.filter(row => row.endedAt === undefined).length > 1) issue(['sleepSessions'], 'More than one active sleep session.')
   data.academicDates.forEach((row, index) => { if (!semesters.has(row.semesterId)) issue(['academicDates', index, 'semesterId'], 'Referenced semester is missing.') })
 })
 export type Backup = z.infer<typeof backupSchema>

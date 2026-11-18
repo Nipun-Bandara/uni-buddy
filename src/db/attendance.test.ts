@@ -133,7 +133,7 @@ describe('occurrence migration', () => {
       ])
       expect((await upgraded.settings.get('preserved'))?.value).toBe(true)
       await expect(upgraded.classOccurrences.add({ ...base, id: 'new-duplicate' })).rejects.toMatchObject({ name: 'ConstraintError' })
-      expect(upgraded.verno).toBe(6)
+      expect(upgraded.verno).toBe(7)
     } finally { await upgraded.delete() }
   })
 })

@@ -22,3 +22,6 @@ export const schemaV5 = {
 
 /** Additive v6: no changes to existing rules, attendance or work sessions. */
 export const schemaV6 = { ...schemaV5, rescheduledClasses: 'id, moduleId, date' }
+
+/** Additive v7: sleep sessions, separate from work sessions. */
+export const schemaV7 = { ...schemaV6, sleepSessions: 'id, startedAt' }
