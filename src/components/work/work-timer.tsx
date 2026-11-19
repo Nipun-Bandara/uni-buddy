@@ -1,9 +1,10 @@
 import { workCategories, workSessionLabel, workSelectionFields } from '@/lib/work-categories'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Play, Square } from 'lucide-react'
+import { Pause, Play, Square } from 'lucide-react'
 import { db } from '@/db/db'
-import { ActiveWorkSessionError, getActiveWorkSession, startWorkSession, stopWorkSession } from '@/db/work-sessions'
+import { ActiveWorkSessionError, getActiveWorkSession, pauseWorkSession, resumeWorkSession, startWorkSession, stopWorkSession } from '@/db/work-sessions'
+import { openPause } from '@/lib/work-pauses'
 import { format } from 'date-fns'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -56,6 +57,16 @@ export function WorkTimer() {
       } else setFailure('Could not start work. Check the selected module and try again.')
     } finally { pending.current = false; setBusy(false) }
   }
+  async function togglePause() {
+    if (!result?.active || pending.current) return
+    const resuming = !!openPause(result.active)
+    pending.current = true; setBusy(true); setFailure('')
+    try {
+      await (resuming ? resumeWorkSession : pauseWorkSession)(result.active.id)
+      setStatus(resuming ? 'Work resumed.' : 'Work paused. Time while paused is not counted.')
+    } catch { setFailure(`Could not ${resuming ? 'resume' : 'pause'} the session. Check your device time and try again.`) }
+    finally { pending.current = false; setBusy(false) }
+  }
   async function stop() {
     if (!result?.active || pending.current) return
     pending.current = true; setBusy(true); setFailure('')
@@ -67,17 +78,22 @@ export function WorkTimer() {
     finally { pending.current = false; setBusy(false) }
   }
 
+  const paused = result?.active ? openPause(result.active) : undefined
   return <section aria-labelledby="work-heading" className="mt-6 space-y-3">
     <h2 id="work-heading" className="sr-only">Work session</h2>
-    {result === undefined ? <p role="status" className="text-sm text-muted-foreground">Loading work session…</p> : result.failed ? <p role="alert" className="text-sm text-destructive">Could not load your work session. Please reload.</p> : result.active ? <Card className="gap-1 border-primary/40 p-5 shadow-none">
-      <p className="mb-2 text-xs font-medium text-muted-foreground">Working now</p>
+    {result === undefined ? <p role="status" className="text-sm text-muted-foreground">Loading work session…</p> : result.failed ? <p role="alert" className="text-sm text-destructive">Could not load your work session. Please reload.</p> : result.active ? <Card className={`gap-1 p-5 shadow-none ${paused ? 'border-border' : 'border-primary/40'}`}>
+      <p className="mb-2 text-xs font-medium text-muted-foreground">{paused ? 'Paused' : 'Working now'}</p>
       <div className="flex items-center gap-2">
         {result.activeModule?.color && <span aria-hidden="true" className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: result.activeModule.color }} />}
         <h3 className="min-w-0 break-words font-semibold">{workSessionLabel(result.active, result.activeModule)}</h3>
       </div>
       {result.active.title && <p className="break-words text-sm text-muted-foreground">{result.active.title}</p>}
-      <p className="py-3 text-sm text-muted-foreground">Started <time dateTime={result.active.startedAt}>{format(new Date(result.active.startedAt), 'd MMM yyyy, p')}</time></p>
-      <Button ref={stopButton} className="min-h-12 w-full" disabled={busy} onClick={() => { void stop() }}><Square aria-hidden="true" />{busy ? 'Ending…' : 'End session'}</Button>
+      <p className="pt-3 text-sm text-muted-foreground">Started <time dateTime={result.active.startedAt}>{format(new Date(result.active.startedAt), 'd MMM yyyy, p')}</time></p>
+      {paused && <p className="text-sm text-muted-foreground">Paused since <time dateTime={paused.startedAt}>{format(new Date(paused.startedAt), 'p')}</time></p>}
+      <div className="grid grid-cols-2 gap-2 pt-3">
+        <Button type="button" variant="outline" className="min-h-12" disabled={busy} onClick={() => { void togglePause() }}>{paused ? <Play aria-hidden="true" /> : <Pause aria-hidden="true" />}{paused ? 'Resume' : 'Pause'}</Button>
+        <Button ref={stopButton} className="min-h-12" disabled={busy} onClick={() => { void stop() }}><Square aria-hidden="true" />{busy ? 'Saving…' : 'End session'}</Button>
+      </div>
     </Card> : <Button ref={startButton} className="min-h-12 w-full text-base" disabled={busy} onClick={begin}><Play aria-hidden="true" />Start work</Button>}
     {failure && !open && <p role="alert" className="text-sm text-destructive">{failure}</p>}
     <span role="status" className="sr-only">{status}</span>

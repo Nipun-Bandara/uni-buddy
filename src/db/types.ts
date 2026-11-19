@@ -53,6 +53,11 @@ export interface RescheduledClass {
   status: AttendanceStatus
 }
 export type WorkCategory = 'competitions' | 'project-development' | 'university-work'
+/** A break inside a work session. The open pause (no endedAt) is always the last one. */
+export interface WorkPause {
+  startedAt: string
+  endedAt?: string
+}
 export interface WorkSession {
   id: string
   moduleId?: string
@@ -62,6 +67,8 @@ export interface WorkSession {
   startedAt: string
   /** Absent while the session is active. Missing values are not indexed by IndexedDB. */
   endedAt?: string
+  /** Breaks, in time order. Worked time = (endedAt − startedAt) − paused time. */
+  pauses?: WorkPause[]
 }
 /** Sleep is recorded by bedtime/wake-up timestamps only; it counts toward its local wake-up date. */
 export interface SleepSession {

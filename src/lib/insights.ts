@@ -2,6 +2,7 @@ import { workCategories } from '@/lib/work-categories'
 import { addDays, addMonths, addWeeks, startOfDay, startOfMonth, startOfWeek } from 'date-fns'
 import type { ClassOccurrence, Module, RescheduledClass, ScheduleRule, WorkSession } from '@/db/types'
 import { toCalendarDate } from '@/lib/dates'
+import { workIntervals } from '@/lib/work-pauses'
 
 export type InsightsPeriod = 'day' | 'week' | 'month'
 export type InsightsData = { sessions: WorkSession[]; occurrences: ClassOccurrence[]; rules: ScheduleRule[]; modules: Module[]; rescheduledClasses?: RescheduledClass[] }
@@ -75,7 +76,8 @@ export function calculateRangeInsights(data: InsightsData, start: Date, end: Dat
   }
   for (const session of data.sessions) {
     if (session.endedAt === undefined) continue
-    const duration = overlap(session.startedAt, session.endedAt, start.getTime(), until)
+    // Worked time only: pauses are excluded, then clipped to this period.
+    const duration = workIntervals(session).reduce((sum, [first, last]) => sum + Math.max(0, Math.min(last, until) - Math.max(first, start.getTime())), 0)
     if (!duration) continue
     independentMs += duration
     if (session.moduleId) moduleRow(session.moduleId).independentMs += duration

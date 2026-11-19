@@ -1,6 +1,7 @@
 import { db } from '@/db/db'
 import type { SleepSession, WorkSession } from '@/db/types'
 import { createId } from '@/lib/ids'
+import { finishWorkSession } from '@/db/work-sessions'
 import { completedSleepSchema, sleepsOverlap, type SleepFormValues } from '@/lib/sleep'
 
 export class ActiveSleepSessionError extends Error {
@@ -15,7 +16,7 @@ export function getActiveSleepSession(): Promise<SleepSession | undefined> {
   return db.sleepSessions.filter(session => session.endedAt === undefined).first()
 }
 
-/** Records bedtime now. An active work session is ended at the same instant. */
+/** Records bedtime now. An active work session ends too (at its pause time if it was paused). */
 export async function startSleepSession(): Promise<{ sleep: SleepSession; endedWork?: WorkSession }> {
   return db.transaction('rw', db.sleepSessions, db.workSessions, async () => {
     if (await getActiveSleepSession()) throw new ActiveSleepSessionError()
@@ -23,7 +24,8 @@ export async function startSleepSession(): Promise<{ sleep: SleepSession; endedW
     let endedWork: WorkSession | undefined
     const work = await db.workSessions.filter(session => session.endedAt === undefined).first()
     if (work) {
-      endedWork = { ...work, endedAt: Date.parse(startedAt) < Date.parse(work.startedAt) ? work.startedAt : startedAt }
+      // A paused session ends when it was paused; otherwise at bedtime (never before its start).
+      endedWork = finishWorkSession(work, new Date(Math.max(Date.parse(startedAt), Date.parse(work.startedAt))).toISOString())
       await db.workSessions.put(endedWork)
     }
     const sleep: SleepSession = { id: createId(), startedAt }

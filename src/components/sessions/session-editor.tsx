@@ -4,6 +4,8 @@ import { format } from 'date-fns'
 import type { Module, WorkSession } from '@/db/types'
 import { toCalendarDate } from '@/lib/dates'
 import { completedSessionSchema, sessionFormValues, type SessionFormValues } from '@/lib/session-history'
+import { formatInsightsDuration } from '@/lib/insights'
+import { pausedMs } from '@/lib/work-pauses'
 import { saveCompletedSession, deleteCompletedSession } from '@/db/session-history'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -71,6 +73,7 @@ export function SessionEditor({ session, modules, onClose, onSaved, returnFocus 
           {key === 'date' || key === 'endDate' ? <DatePicker id={`session-${key}`} name={key} label={key === 'date' ? 'Date' : 'End date'} value={fields[key]} defaultDate={fields.date} onChange={value => change(key, value)} disabled={busy} invalid={!!errors[key]} describedBy={describedBy(key)} /> : <Input id={`session-${key}`} name={key} type="time" step="1" required disabled={busy} value={fields[key]} onChange={event => change(key, event.target.value)} className="min-h-11 text-base" aria-invalid={!!errors[key]} aria-describedby={describedBy(key)} />}
           {error(key)}
         </div>)}
+        {session?.pauses?.length ? <p className="text-sm text-muted-foreground">Includes {formatInsightsDuration(pausedMs(session))} paused. Breaks are not counted as work and are kept where they still fit inside the new start and end.</p> : null}
         {failure && !confirmOpen && <p role="alert" className="text-sm text-destructive">{failure}</p>}
         {session && <Button type="button" variant="ghost" className="min-h-11 w-full text-destructive" disabled={busy} onClick={() => { setFailure(''); setConfirmOpen(true) }}>Delete session</Button>}
       </form>

@@ -1,7 +1,7 @@
 import { format, subDays } from 'date-fns'
 import { z } from 'zod'
 import { workCategorySchema } from '@/lib/work-categories'
-import { getElapsedSeconds } from '@/lib/work-duration'
+import { workedMs } from '@/lib/work-pauses'
 import type { WorkSession } from '@/db/types'
 import { calendarDateSchema, localDateTimeToIso, parseCalendarDate, toCalendarDate } from '@/lib/dates'
 
@@ -71,7 +71,7 @@ export function historyDateLabel(date: string, today: string) {
 }
 
 export function sessionDurationLabel(session: WorkSession) {
-  const seconds = getElapsedSeconds(session.startedAt, Date.parse(session.endedAt ?? session.startedAt))
+  const seconds = Math.floor(workedMs(session) / 1000)
   const minutes = Math.floor(seconds / 60)
   const hours = Math.floor(minutes / 60)
   if (hours) return `${hours}h${minutes % 60 ? ` ${minutes % 60}m` : ''}`

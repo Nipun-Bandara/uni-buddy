@@ -27,8 +27,22 @@ const occurrence = z.strictObject({
   id, scheduleRuleId: id, date: calendarDateSchema, startAt: timestamp, endAt: timestamp,
   status: z.enum(['pending', 'attended', 'missed', 'cancelled']),
 }).refine(orderedTimestamps, 'Occurrence end must be after start.')
-const session = z.strictObject({ id, moduleId: id.optional(), category: workCategorySchema.optional(), title: z.string().optional(), startedAt: timestamp, endedAt: timestamp.optional() })
+const workPause = z.strictObject({ startedAt: timestamp, endedAt: timestamp.optional() })
+const session = z.strictObject({ id, moduleId: id.optional(), category: workCategorySchema.optional(), title: z.string().optional(), startedAt: timestamp, endedAt: timestamp.optional(), pauses: z.array(workPause).optional() })
   .refine(value => value.endedAt === undefined || Date.parse(value.endedAt) >= Date.parse(value.startedAt), 'Session end is before start.')
+  .refine(value => {
+    // Pauses are ordered, never overlap, and stay inside the session. Only the last pause of an active session may be open.
+    let cursor = Date.parse(value.startedAt)
+    const end = value.endedAt === undefined ? Infinity : Date.parse(value.endedAt)
+    return (value.pauses ?? []).every((pause, index, all) => {
+      const first = Date.parse(pause.startedAt)
+      const last = pause.endedAt === undefined ? undefined : Date.parse(pause.endedAt)
+      if (first < cursor || first > end) return false
+      if (last === undefined) return index === all.length - 1 && value.endedAt === undefined
+      cursor = last
+      return last >= first && last <= end
+    })
+  }, 'Work session pauses are out of order or outside the session.')
 const sleepSession = z.strictObject({ id, startedAt: timestamp, endedAt: timestamp.optional() })
   .refine(value => value.endedAt === undefined || Date.parse(value.endedAt) > Date.parse(value.startedAt), 'Sleep wake-up must be after bedtime.')
 const setting = z.strictObject({ key: id, value: settingValue })
